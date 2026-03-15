@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.102"
+log = "0.4.29"
+ndarray = "0.17.2"
+shakmaty = "0.30.0"
 shared_memory = "0.12.4"
 
 [[bin]]

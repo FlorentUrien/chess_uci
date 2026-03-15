@@ -1,5 +1,7 @@
 use shared_memory::*;
 use std::ptr;
+mod mcts;
+mod conv;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shm = ShmemConf::new().os_id("carre_shm").open()?;
