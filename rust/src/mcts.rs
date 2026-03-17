@@ -10,7 +10,6 @@ use log::{debug, info, warn};
 use shakmaty::{fen::Fen, Chess, EnPassantMode, Move, Position};
 
 pub struct Mcts {
-    moteur: Moteur,
     cpuct: f32,
     virtual_loss: u32,
 }
@@ -19,7 +18,6 @@ impl Mcts {
     /// Constructeur
     ///
     /// # Arguments
-    /// * `moteur` - On a besoin du moteur d'IA sur lequel le MCTS va se brancher
     /// * `cpuct` - Joue sur la largeur de recherche
     /// * `virtual_loss` - 10 peut être une bonne valeur (1 à 100), cela indique la diversité de la recherche pendant la phase d'exploration (en pending)
     ///
@@ -31,38 +29,11 @@ impl Mcts {
     ///
     /// # Retour
     /// MonteCarlo Training Search
-    pub fn new(moteur: Moteur, cpuct: f32, virtual_loss: u32) -> Self {
+    pub fn new(cpuct: f32, virtual_loss: u32) -> Self {
         Self {
-            moteur,
             cpuct,
             virtual_loss,
         }
-    }
-
-    /// Pour évaluer une position à partir de l'échiquier
-    ///
-    /// # Arguments
-    /// * `board` - L'échiquier'
-    ///
-    /// # Retour
-    /// L'évaluation qui est composée de
-    /// 1. f32: l'évaluation du noeud
-    /// 2. Vec<Move, f32>: Qui contient tous les coups légaux avec leur chess.move et leurs probabilités normalisés.
-    ///
-    /// Résultats classé par ordre de probabilité décroissante.
-    fn evaluate_position(&mut self, board: &Chess) -> anyhow::Result<(f32, Vec<(Move, f32)>)> {
-        let prediction = self
-            .moteur
-            .predict(&board)
-            .expect("Erreur lors de la prédiction Keras/Torch");
-
-        let policy_legal = get_legal_moves_with_probs(&prediction.5, &board);
-        let moves_with_prob = policy_legal
-            .into_iter()
-            .map(|p| (p.mvt.clone(), p.prob))
-            .collect();
-
-        Ok((prediction.0, moves_with_prob))
     }
 
     /// Gère les nb_iterations recherches en les découpants en batch pour optimiser l'usage GPU
@@ -90,7 +61,8 @@ impl Mcts {
 
         if !(tree.nodes[0].is_expanded) {
             // La racine n'est pas étendue, on ne peut pas avancer avant de l'avoir étendue
-            let pred = self.moteur.predict(&board)?;
+            
+            // let pred = self.moteur.predict(&board)?;
             let coups_legaux = get_legal_moves_with_probs(&pred.5, board);
             let coups_pour_arbre: Vec<(Move, f32)> = coups_legaux
                 .iter()
