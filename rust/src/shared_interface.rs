@@ -40,4 +40,18 @@ impl SharedInterface {
             std::ptr::read_volatile(ptr.add(1)) == 1
         }
     }
+
+    /// Ecris les tenseurs à passer à l'IA
+    ///
+    /// # Arguments
+    /// * `tree` - L'arbre que l'on va développer
+    ///
+    /// &mut pour dire qu'on le développe mais qu'on le rend ensuite. Pour ne pas le jeter après usage.
+    /// * `board` - L'échiquier
+    /// * `nb_iterations` - Le nombre de noeuds à développer
+    ///
+    /// # Retour
+    fn write_tensors(){
+        shm_sync[1]=0;
+    }
 }

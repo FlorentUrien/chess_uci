@@ -3,15 +3,6 @@ use shakmaty::{Chess, Position};
 use std::io::{self, Write};
 use std::str::FromStr;
 
-/// Lecture de la ligne de commande uci
-///
-/// # Arguments
-/// * `input` - La ligne de commande extraite de std::io
-fn lecture_io(input: &mut String) {
-    input.clear();
-    io::stdin().read_line(input).expect("Erreur"); // TODO: rendre la lecture non bloquante à terme, mais là je crise
-}
-
 pub struct Uci {
     simulations: u32, // Nombre de simulations
     batch_size: u16,  // Taille maximale du batch
@@ -70,6 +61,8 @@ impl Uci {
     /// # Arguments
     /// * `line` - La ligne de commande extraite de std::io
     fn update_position(&mut self, ligne: &str) {
+        // 0. On peut partir d'une fen
+        if ligne.contains("fen") {}
         // 1. On réinitialise si c'est startpos
         if ligne.contains("startpos") {
             self.pos = Chess::default();
@@ -96,15 +89,15 @@ impl Uci {
         println!("info string Position mise à jour, coup n°{}", num_coup);
     }
 
-    /// Lit les commandes uci sur le std::io
+    /// Lit les commandes uci
+    ///
+    /// # Arguments
+    /// * `ligne` - La ligne de commande uci reçue et à traiter
     ///
     /// # Retour
     /// * true = si on continue, false si on arrête
-    pub fn lit_uci(&mut self) -> bool {
-        let mut ligne = String::new();
+    pub fn lit_uci(&mut self, ligne: &str) -> bool {
         let mut ret: bool = true;
-
-        lecture_io(&mut ligne);
 
         match ligne.trim() {
             // Poignée de main initiale, présentation des options configurables
@@ -127,15 +120,21 @@ impl Uci {
             "isready" => {
                 println!("readyok");
                 io::stdout().flush().unwrap(); // VITAL pour Cutechess
+                // TODO : Brancher le moteur IA
             }
             "ucinewgame" => {
                 self.pos = Chess::default();
                 self.reset = true;
+                // TODO : Brancher le MTCS
             }
             "stop" => {
                 self.force_to_play = true;
+                // TODO : Brancher le MTCS
             }
-            "quit" => ret = false,
+            "quit" => {
+                ret = false;
+                // TODO : Brancher la coupure
+            }
             _ => {
                 // Si ce n'est pas une commande simple, on regarde si ça commence par...
                 // setoption (pour changer une option)
@@ -218,19 +217,11 @@ impl Uci {
                 }
                 // C'est à son tour de jouer
                 if ligne.starts_with("go") {
+                    // TODO : Traiter nodes xxxx
                     self.your_turn = true;
                 }
             }
         } // Fermeture de la session     
         ret
-    }
-
-    // Pour test uniquement
-    pub fn loop_uci(&mut self) {
-        loop {
-            if !self.lit_uci() {
-                break;
-            }
-        }
     }
 }

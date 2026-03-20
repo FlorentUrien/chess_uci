@@ -7,6 +7,7 @@ edition = "2024"
 anyhow = "1.0.102"
 log = "0.4.29"
 ndarray = "0.17.2"
+nix = { version = "0.27", features = ["poll"] }
 shakmaty = "0.30.0"
 shared_memory = "0.12.4"
 
