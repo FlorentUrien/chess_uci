@@ -15,7 +15,7 @@ class SharedInterface:
         1. (Rust -> Python) Tenseurs d'entrée de l'IA (u8) : Format (batch_size, 19, 8, 8).
         2. (Python -> Rust) Policy, les probabilités de coups théoriques possibles (f32) : Format (batch_size, 4672)
         3. (Python -> Rust) Evaluation (f32), le score de la position : Format (batch_size)
-        4. (Python <-> Rust) Synch (ushort) : Format(2)
+        4. (Python <-> Rust) Synch (u8) : Format(2)
         
         Note sur la synchronisation:
             0: Côté Python (0, rien écrit sinon batch_size)
@@ -65,7 +65,7 @@ class SharedInterface:
             create,
         )
         self.shm_sync = self._get_shm(
-            "shm_sync", 2 * np.dtype(np.ushort).itemsize, create
+            "shm_sync", 2 * np.dtype(np.uint8).itemsize, create
         )
 
         # Création des vues Numpy (Directement utilisables par ton IA)
