@@ -70,7 +70,7 @@ class SharedInterface:
 
         # Création des vues Numpy (Directement utilisables par ton IA)
         self.tensor = np.ndarray(
-            self.shape_input, dtype=np.uint8, buffer=self.shm_tensor.buf
+            self.shape_tensor, dtype=np.uint8, buffer=self.shm_tensor.buf
         )
         self.policy = np.ndarray(
             self.shape_policy, dtype=np.float32, buffer=self.shm_policy.buf
