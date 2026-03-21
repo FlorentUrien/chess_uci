@@ -11,9 +11,7 @@ pub struct Uci {
     limite_stochastique: f32,
     poids_material: f32,
     poids_echecs: f32,
-    blocks_5: u8,
-    dataset: u8,
-    onnx: bool,
+    no_model: u8,
     reset: bool,
     pos: Chess,
     force_to_play: bool,
@@ -31,9 +29,7 @@ impl Uci {
             limite_stochastique: 5.0,
             poids_material: 0.1,
             poids_echecs: 0.1,
-            blocks_5: 5,
-            dataset: 1,
-            onnx: true,
+            no_model: 0,
             reset: true,
             pos: Chess::default(),
             force_to_play: false,
@@ -104,15 +100,13 @@ impl Uci {
             "uci" => {
                 println!("id name Florent_IA");
                 println!("option name Dataset type spin default 1 min 1 max 3");
-                println!("option name Blocks_5 type spin default 1 min 1 max 5");
                 println!("option name Simulations type spin default 800 min 100 max 100000");
-                println!("option name Batch_size type spin default 8 min 4 max 128");
                 println!("option name PUCT_x10 type spin default 30 min 10 max 50");
                 println!("option name Temperature_x10 type spin default 20 min 1 max 100");
                 println!("option name Limite_stochastique type spin default 5 min 1 max 20");
                 println!("option name Poids_material_x10 type spin default 1 min 0 max 10");
                 println!("option name Poids_echecs_x10 type spin default 1 min 0 max 10");
-                println!("option name ONNX type spin default 1 min 0 max 1");
+                println!("option name Numero_model type spin default 0 min 0 max 10");
                 println!("uciok");
                 io::stdout().flush().unwrap();
             }
@@ -187,19 +181,9 @@ impl Uci {
                                         self.poids_echecs = v / 10.0;
                                     }
                                 }
-                                "Blocks_5" => {
+                                "Numero_model" => {
                                     if let Ok(v) = value.parse::<u8>() {
-                                        self.blocks_5 = v * 5;
-                                    }
-                                }
-                                "Dataset" => {
-                                    if let Ok(v) = value.parse::<u8>() {
-                                        self.dataset = v;
-                                    }
-                                }
-                                "ONNX" => {
-                                    if let Ok(v) = value.parse::<i8>() {
-                                        self.onnx = v == 1;
+                                        self.no_model = v;
                                     }
                                 }
                                 _ => println!("info string Option inconnue : {}", name),

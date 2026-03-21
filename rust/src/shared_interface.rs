@@ -5,6 +5,7 @@ struct SharedInterface {
     shm_policy: Shmem,  // (B, 4672) f32
     shm_value: Shmem,   // (B) f32
     shm_sync: Shmem,    // (2) u8
+    shm_no_model: Shmem, // u8
     batch_size: usize,
 }
 
@@ -15,12 +16,14 @@ impl SharedInterface {
         let shm_policy = ShmemConf::new().os_id("shm_policy").open().unwrap();
         let shm_value = ShmemConf::new().os_id("shm_eval").open().unwrap();
         let shm_sync = ShmemConf::new().os_id("shm_sync").open().unwrap();
+        let shm_no_model = ShmemConf::new().os_id("shm_no_model").open().unwrap();
 
         SharedInterface {
             shm_tensor,
             shm_policy,
             shm_value,
             shm_sync,
+            shm_no_model,
             batch_size,
         }
     }
@@ -53,5 +56,13 @@ impl SharedInterface {
     /// # Retour
     fn write_tensors(){
         shm_sync[1]=0;
+    }
+
+    /// Ecris le modèle ONNX que l'on va utiliser
+    /// 
+    /// # Arguments
+    /// * `no` - Le numéro du modèle que Python va utiliser
+    fn write_no_model(no: u8){
+        shm_no_model[0]=no;
     }
 }

@@ -16,7 +16,8 @@ class SharedInterface:
         2. (Python -> Rust) Policy, les probabilités de coups théoriques possibles (f32) : Format (batch_size, 4672)
         3. (Python -> Rust) Evaluation (f32), le score de la position : Format (batch_size)
         4. (Python <-> Rust) Synch (u8) : Format(2)
-        
+        5. (Rust -> Python) Numéro du modèle ONNX utilisé (u8)
+
         Note sur la synchronisation:
             0: Côté Python (0, rien écrit sinon batch_size)
             1: Côté Rust (0, rien écrit sinon batch_size)
@@ -47,6 +48,8 @@ class SharedInterface:
         """
         self.shape_sync = (2,)
 
+        self.shape_no_model = (1,)
+
         # Initialisation des segments
         # Note : On utilise 'create=True' seulement côté Python au démarrage
         self.shm_tensor = self._get_shm(
@@ -68,6 +71,10 @@ class SharedInterface:
             "shm_sync", 2 * np.dtype(np.uint8).itemsize, create
         )
 
+        self.shm_no_model = self._get_shm(
+            "shm_no_model", np.dtype(np.uint8).itemsize, create
+        )
+
         # Création des vues Numpy (Directement utilisables par ton IA)
         self.tensor = np.ndarray(
             self.shape_tensor, dtype=np.uint8, buffer=self.shm_tensor.buf
@@ -80,6 +87,9 @@ class SharedInterface:
         )
         self.sync = np.ndarray(
             self.shape_sync, dtype=np.uint8, buffer=self.shm_sync.buf
+        )
+        self.no_model = np.ndarray(
+            self.shape_no_model, dtype=np.uint8, buffer=self.shm_no_model.buf
         )
 
     def _get_shm(self, name, size, create):
@@ -102,6 +112,12 @@ class SharedInterface:
         while self.sync[0] == 0:
             pass
         self.sync[0] = 0  # On consomme le signal
+
+    def wait_for_no_model(self):
+        """Attend que Rust ait rempli le no du modèle que l'on va utiliser"""
+        while self.no_model[0] == 0:
+            pass
+        self.no_model[0] = 0
 
     def close(self):
         """Nettoyage propre des segments"""
