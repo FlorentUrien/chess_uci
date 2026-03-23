@@ -1,10 +1,35 @@
 import os
+import time
+import threading
 from shared_interface import SharedInterface
 from moteur_ia import charger_modele
+from multiprocessing import shared_memory
 # from predictor import ONNXPredictor
 
 
+def auto_suicide_if_orphan():
+    """Vérifie si le parent est mort et nettoie tout le bordel."""
+    # On récupère l'ID du parent au démarrage
+    parent_pid = os.getppid()
+    
+    while True:
+        # Sous Linux, si le parent meurt, le PPID devient 1 (processus init)
+        if os.getppid() != parent_pid or os.getppid() == 1:
+            print("Parent perdu. Nettoyage de la mémoire partagée...")
+            # On nettoie manuellement les segments pour éviter les leaks
+            for name in ["shm_tensor", "shm_policy", "shm_eval", "shm_sync", "shm_no_model"]:
+                try:
+                    shm = shared_memory.SharedMemory(name=name)
+                    shm.close()
+                    shm.unlink()
+                except:
+                    pass
+            os._exit(0) # Fermeture brutale et propre
+        time.sleep(1) # On vérifie chaque seconde
+
+
 def main():
+    threading.Thread(target=auto_suicide_if_orphan, daemon=True).start()
     print("Lancement partie Python")
     # 1. On initialise l'interface (c'est Python qui 'create=True' les segments)
     # Assure-toi que le batch_size correspond à celui de ton code Rust
