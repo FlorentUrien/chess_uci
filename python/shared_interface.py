@@ -113,11 +113,16 @@ class SharedInterface:
             pass
         self.sync[0] = 0  # On consomme le signal
 
-    def wait_for_no_model(self):
+    def wait_for_no_model(self) -> int:
         """Attend que Rust ait rempli le no du modèle que l'on va utiliser"""
         while self.no_model[0] == 0:
             pass
+
+        no_model = self.no_model[0]
+        print(f"Numéro du modèle lu {no_model}")
         self.no_model[0] = 0
+
+        return no_model
 
     def close(self):
         """Nettoyage propre des segments"""

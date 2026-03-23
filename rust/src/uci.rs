@@ -3,6 +3,8 @@ use shakmaty::{Chess, Position};
 use std::io::{self, Write};
 use std::str::FromStr;
 
+use crate::shared_interface::SharedInterface;
+
 pub struct Uci {
     simulations: u32, // Nombre de simulations
     batch_size: u16,  // Taille maximale du batch
@@ -16,11 +18,12 @@ pub struct Uci {
     pos: Chess,
     force_to_play: bool,
     your_turn: bool,
+    shared_mem: SharedInterface,
 }
 
 impl Uci {
     /// Constructeur
-    pub fn new() -> Self {
+    pub fn new(shared_mem: SharedInterface) -> Self {
         Self {
             simulations: 800,
             batch_size: 8,
@@ -34,6 +37,7 @@ impl Uci {
             pos: Chess::default(),
             force_to_play: false,
             your_turn: false,
+            shared_mem: shared_mem,
         }
     }
 
@@ -106,7 +110,7 @@ impl Uci {
                 println!("option name Limite_stochastique type spin default 5 min 1 max 20");
                 println!("option name Poids_material_x10 type spin default 1 min 0 max 10");
                 println!("option name Poids_echecs_x10 type spin default 1 min 0 max 10");
-                println!("option name Numero_model type spin default 0 min 0 max 10");
+                println!("option name Numero_model type spin default 1 min 1 max 10");
                 println!("uciok");
                 io::stdout().flush().unwrap();
             }
@@ -184,6 +188,7 @@ impl Uci {
                                 "Numero_model" => {
                                     if let Ok(v) = value.parse::<u8>() {
                                         self.no_model = v;
+                                        self.shared_mem.write_no_model(v);
                                     }
                                 }
                                 _ => println!("info string Option inconnue : {}", name),

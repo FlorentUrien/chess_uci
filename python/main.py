@@ -5,6 +5,7 @@ from moteur_ia import charger_modele
 
 
 def main():
+    print("Lancement partie Python")
     # 1. On initialise l'interface (c'est Python qui 'create=True' les segments)
     # Assure-toi que le batch_size correspond à celui de ton code Rust
     interface = SharedInterface(batch_size=512, create=True)
@@ -12,7 +13,7 @@ def main():
     # 2. Il va falloir choisir le bon modèle ONNX à ouvrir
     no_model = interface.wait_for_no_model()
 
-    if no_model == 0:
+    if no_model == 1:
         path_model = os.path.join(
             ".",
             "models",
