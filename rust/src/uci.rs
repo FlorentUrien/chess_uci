@@ -103,7 +103,6 @@ impl Uci {
             // Poignée de main initiale, présentation des options configurables
             "uci" => {
                 println!("id name Florent_IA");
-                println!("option name Dataset type spin default 1 min 1 max 3");
                 println!("option name Simulations type spin default 800 min 100 max 100000");
                 println!("option name PUCT_x10 type spin default 30 min 10 max 50");
                 println!("option name Temperature_x10 type spin default 20 min 1 max 100");
@@ -116,9 +115,9 @@ impl Uci {
             }
             // Pour annoncer que le réseau de neurones est initialisé
             "isready" => {
+                self.shared_mem.write_no_model(self.no_model);
                 println!("readyok");
                 io::stdout().flush().unwrap(); // VITAL pour Cutechess
-                // TODO : Brancher le moteur IA
             }
             "ucinewgame" => {
                 self.pos = Chess::default();
@@ -188,7 +187,6 @@ impl Uci {
                                 "Numero_model" => {
                                     if let Ok(v) = value.parse::<u8>() {
                                         self.no_model = v;
-                                        self.shared_mem.write_no_model(v);
                                     }
                                 }
                                 _ => println!("info string Option inconnue : {}", name),
