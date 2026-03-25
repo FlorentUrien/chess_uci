@@ -1,17 +1,14 @@
-use shared_memory::*;
 use std::io::{self, BufRead};
-use std::ptr;
-use std::sync::mpsc::{self, Sender};
-use std::thread;
-use std::time::Duration;
+use std::sync::mpsc::{Sender};
 
-// use crate::uci::Uci;
-
-mod mcts;
 mod conv;
+mod mcts;
 // mod uci;
 mod shared_interface;
 
+use crate::mcts::node::Node;
+use crate::mcts::tree::MctsTree;
+use shakmaty::Chess;
 
 /// Gère le thread d'écoute du stdin pour capter les échanges uci avec Cutechess
 ///
@@ -32,9 +29,15 @@ fn ecoute_stdin(tx: Sender<String>) {
 
 fn main() {
     println!("Démarrage de la partie Rust");
+    let shared_interface = shared_interface::SharedInterface::new(512);
+    let mut mcts = mcts::Mcts::new(2.0, 10, shared_interface);
+    let new_root = Node::new(None, 1.0);
+    let mut new_tree = MctsTree::new(new_root);
+    let mut new_board = Chess::new();
+    mcts.search_batch(&mut new_tree, &mut new_board, 20000).expect("Ton ku");
 
-/*     let shared_mem = shared_interface::SharedInterface::new(512);
-    let mut uci = Uci::new(shared_mem);    
+    /*     let shared_mem = shared_interface::SharedInterface::new(512);
+    let mut uci = Uci::new(shared_mem);
 
     // 0. On crée le canal de communication
     let (tx, rx) = mpsc::channel::<String>();
