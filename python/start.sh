@@ -8,5 +8,6 @@ python python/main.py &
 
 # 2. On lance Rust en PREMIER PLAN
 # Comme c'est lui le parent de Python, s'il meurt, Python suit.
+# Redirige la sortie standard (1) et les erreurs (2) vers un fichier log
 cd rust
-exec cargo run --release
+cargo run --release >> ../engine_debug.log 2>&1

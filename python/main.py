@@ -54,7 +54,9 @@ def main():
 
             # 4. Récupération des données depuis la mémoire partagée
             # L'interface te donne déjà une vue Numpy (self.tensor)
-            # input_tensor = interface.tensor
+            input_tensor = interface.tensor
+            print("tensor reçu")
+            print(f"{input_tensor}")
 
             # 5. Inférence (Le moment où le GPU travaille)
             # Predictor retourne un dict avec 'policy', 'value', etc.

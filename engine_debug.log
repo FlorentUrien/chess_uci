@@ -1,0 +1,64 @@
+   Compiling Rust v0.1.0 (/home/florent/Rust/chess_uci/rust)
+error[E0433]: failed to resolve: could not find `conv` in the crate root
+ --> src/mcts.rs:4:12
+  |
+4 | use super::conv::policy::get_legal_moves_with_probs;
+  |            ^^^^ could not find `conv` in the crate root
+
+error[E0425]: cannot find value `pred` in this scope
+  --> src/mcts.rs:66:60
+   |
+66 |             let coups_legaux = get_legal_moves_with_probs(&pred.5, board);
+   |                                                            ^^^^ not found in this scope
+
+warning: unused import: `shared_memory::*`
+ --> src/main.rs:1:5
+  |
+1 | use shared_memory::*;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::ptr`
+ --> src/main.rs:3:5
+  |
+3 | use std::ptr;
+  |     ^^^^^^^^
+
+warning: unused imports: `debug` and `warn`
+ --> src/mcts.rs:9:11
+  |
+9 | use log::{debug, info, warn};
+  |           ^^^^^        ^^^^
+
+error[E0609]: no field `moteur` on type `&mut Mcts`
+   --> src/mcts.rs:141:30
+    |
+141 |                 let t = self.moteur.fen_to_tensor(&fen)?;
+    |                              ^^^^^^ unknown field
+    |
+    = note: available fields are: `cpuct`, `virtual_loss`
+
+error[E0282]: type annotations needed
+   --> src/mcts.rs:146:53
+    |
+146 |             let views: Vec<_> = tensors.iter().map(|t| t.view()).collect();
+    |                                                     ^  - type must be known at this point
+    |
+help: consider giving this closure parameter an explicit type
+    |
+146 |             let views: Vec<_> = tensors.iter().map(|t: /* Type */| t.view()).collect();
+    |                                                      ++++++++++++
+
+error[E0609]: no field `moteur` on type `&mut Mcts`
+   --> src/mcts.rs:155:36
+    |
+155 |             let predictions = self.moteur.predict_batch(batch_tensor)?;
+    |                                    ^^^^^^ unknown field
+    |
+    = note: available fields are: `cpuct`, `virtual_loss`
+
+Some errors have detailed explanations: E0282, E0425, E0433, E0609.
+For more information about an error, try `rustc --explain E0282`.
+warning: `Rust` (bin "Rust") generated 3 warnings
+error: could not compile `Rust` (bin "Rust") due to 5 previous errors; 3 warnings emitted

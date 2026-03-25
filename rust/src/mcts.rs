@@ -1,7 +1,7 @@
 pub mod node;
 pub mod tree;
 
-use super::conv::policy::get_legal_moves_with_probs;
+// use super::conv::policy::get_legal_moves_with_probs;
 use ndarray::Axis;
 use std::time::Instant;
 

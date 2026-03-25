@@ -3,6 +3,7 @@ use shakmaty::{Chess, Position};
 use std::io::{self, Write};
 use std::str::FromStr;
 
+use crate::mcts::Mcts;
 use crate::shared_interface::SharedInterface;
 
 pub struct Uci {
@@ -19,6 +20,7 @@ pub struct Uci {
     force_to_play: bool,
     your_turn: bool,
     shared_mem: SharedInterface,
+    mcts: Option<Mcts>,
 }
 
 impl Uci {
@@ -38,6 +40,7 @@ impl Uci {
             force_to_play: false,
             your_turn: false,
             shared_mem: shared_mem,
+            mcts: None,
         }
     }
 

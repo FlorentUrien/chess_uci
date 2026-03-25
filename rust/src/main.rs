@@ -5,11 +5,11 @@ use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::Duration;
 
-use crate::uci::Uci;
+// use crate::uci::Uci;
 
 // mod mcts;
-// mod conv;
-mod uci;
+mod conv;
+// mod uci;
 mod shared_interface;
 
 
@@ -33,7 +33,7 @@ fn ecoute_stdin(tx: Sender<String>) {
 fn main() {
     println!("Démarrage de la partie Rust");
 
-    let shared_mem = shared_interface::SharedInterface::new(512);
+/*     let shared_mem = shared_interface::SharedInterface::new(512);
     let mut uci = Uci::new(shared_mem);    
 
     // 0. On crée le canal de communication
@@ -50,5 +50,5 @@ fn main() {
             uci.lit_uci(&msg);
         }
         thread::sleep(Duration::from_millis(10));
-    }
+    }*/
 }
