@@ -105,7 +105,7 @@ class SharedInterface:
         Args:
             batch_size (np.ushort): Taille du batch de prédiction
         """
-        self.sync[1] = batch_size
+        self.sync[0] = batch_size
 
     def wait_for_input(self):
         """Attend que Rust ait rempli le batch de tenseurs"""

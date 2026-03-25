@@ -4,7 +4,7 @@ import threading
 from shared_interface import SharedInterface
 from moteur_ia import charger_modele
 from multiprocessing import shared_memory
-# from predictor import ONNXPredictor
+from predictor import ONNXPredictor
 
 
 def auto_suicide_if_orphan():
@@ -44,7 +44,7 @@ def main():
             "models",
             "RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights.onnx",
         )
-        charger_modele(path_model)
+        modele = charger_modele(path_model)
 
     try:
         while True:
@@ -60,16 +60,16 @@ def main():
 
             # 5. Inférence (Le moment où le GPU travaille)
             # Predictor retourne un dict avec 'policy', 'value', etc.
-            # predictions = predictor.predict(input_tensor)
+            predictions = modele.predict(input_tensor)
 
             # 6. On recopie les résultats dans la mémoire partagée pour Rust
             # On utilise [:] pour modifier le contenu du segment sans casser la vue
-            # interface.policy[:] = predictions['policy']
-            # interface.value[:] = predictions['value']
+            interface.policy[:] = predictions['policy']
+            interface.value[:] = predictions['value']
 
             # 7. On signale à Rust que c'est prêt
             # On lui renvoie la taille du batch pour qu'il sache combien lire
-            # interface.signal_output_ready(batch_size=512)
+            interface.signal_output_ready(batch_size=len(predictions))
 
     except KeyboardInterrupt:
         print("\nArrêt de l'IA...")
