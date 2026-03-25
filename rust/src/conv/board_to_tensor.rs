@@ -1,84 +1,60 @@
-use chess::{Board, Color, Piece};
-use std::str::FromStr;
+use shakmaty::{CastlingSide, Chess, Position, Role, fen::Fen, CastlingMode};
 
-/// Conversion du plateau en tenseur 19x8x8.
-/// Retourne un tableau 3D de 19 plans, 8 lignes, 8 colonnes.
-pub fn board_to_tensor(board: &Board) -> [[[u8; 8]; 8]; 19] {
-    // 1. Initialisation du tenseur rempli de zéros
+pub fn board_to_tensor(pos: &Chess) -> [[[u8; 8]; 8]; 19] {
     let mut tensor = [[[0u8; 8]; 8]; 19];
+    let board = pos.board();
+    let is_white = pos.turn().is_white();
 
-    let turn = board.side_to_move();
-    let is_white = turn == Color::White;
-
-    // 2 & 3. Remplir les pièces (0-11) et les masques de présence (17-18)
-    // On boucle sur les 64 cases du plateau
-    for sq in chess::ALL_SQUARES {
-        if let Some(piece) = board.piece_on(sq) {
-            let piece_color = board.color_on(sq).unwrap();
-
-            // Calcul du "Flip" vertical si c'est aux Noirs de jouer
-            // rank 0 = rangée 1 (A1-H1), rank 7 = rangée 8 (A8-H8)
-            let file = sq.get_file().to_index();
-            let rank = sq.get_rank().to_index();
+    for sq in shakmaty::Square::ALL {
+        if let Some(piece) = board.piece_at(sq) {
+            let file = sq.file() as usize;
+            let rank = sq.rank() as usize;
+            // Mirror vertical si Noir joue
             let view_rank = if is_white { rank } else { 7 - rank };
 
-            let piece_idx = match piece {
-                Piece::Pawn => 0,
-                Piece::Knight => 1,
-                Piece::Bishop => 2,
-                Piece::Rook => 3,
-                Piece::Queen => 4,
-                Piece::King => 5,
+            let piece_idx = match piece.role {
+                Role::Pawn => 0,
+                Role::Knight => 1,
+                Role::Bishop => 2,
+                Role::Rook => 3,
+                Role::Queen => 4,
+                Role::King => 5,
             };
 
-            if piece_color == turn {
-                tensor[piece_idx][view_rank][file] = 1; // Mes pièces
-                tensor[17][view_rank][file] = 1; // Présence amie
+            if piece.color == pos.turn() {
+                tensor[piece_idx][view_rank][file] = 1;
+                tensor[17][view_rank][file] = 1; // Amis
             } else {
-                tensor[piece_idx + 6][view_rank][file] = 1; // Ses pièces
-                tensor[18][view_rank][file] = 1; // Présence ennemie
+                tensor[piece_idx + 6][view_rank][file] = 1;
+                tensor[18][view_rank][file] = 1; // Ennemis
             }
         }
     }
 
-    // 4. Droits au roque (Couches 12-15 : plans pleins)
-    let my_ks = board.castle_rights(turn).has_kingside();
-    let my_qs = board.castle_rights(turn).has_queenside();
-    let his_ks = board.castle_rights(!turn).has_kingside();
-    let his_qs = board.castle_rights(!turn).has_queenside();
-
-    // Si on a le droit, on remplit tout le plan de 1
+    // Droits au roque
+    let c = pos.castles();
     for r in 0..8 {
         for f in 0..8 {
-            if my_ks {
+            if c.has(pos.turn(), CastlingSide::KingSide) {
                 tensor[12][r][f] = 1;
             }
-            if my_qs {
+            if c.has(pos.turn(), CastlingSide::QueenSide) {
                 tensor[13][r][f] = 1;
             }
-            if his_ks {
+            if c.has(!pos.turn(), CastlingSide::KingSide) {
                 tensor[14][r][f] = 1;
             }
-            if his_qs {
+            if c.has(!pos.turn(), CastlingSide::QueenSide) {
                 tensor[15][r][f] = 1;
             }
         }
     }
 
-    // 5. Prise en passant (Couche 16)
-    if let Some(ep_sq) = board.en_passant() {
-        let file = ep_sq.get_file().to_index();
-        let rank = ep_sq.get_rank().to_index();
-
-        // La case EP est la case VIDE derrière le pion.
-        // Le pion adverse, lui, est sur le rank 3 (si Blanc joue) ou rank 4 (si Noir joue).
-        // On veut marquer la case du PION capturable pour l'IA.
-        let pawn_rank = if is_white { rank + 1 } else { rank - 1 };
-
-        // On applique le miroir visuel habituel sur ce rang
-        let view_rank = if is_white { pawn_rank } else { 7 - pawn_rank };
-
-        tensor[16][view_rank][file] = 1;
+    // En-passant
+    if let Some(ep_sq) = pos.pseudo_legal_ep_square() {
+        let file = ep_sq.file() as usize;
+        let rank = ep_sq.rank() as usize;
+        tensor[16][if is_white { rank } else { 7 - rank }][file] = 1;
     }
 
     tensor
@@ -89,10 +65,11 @@ pub fn board_to_tensor(board: &Board) -> [[[u8; 8]; 8]; 19] {
 pub fn fen_to_tensor(fen_str: &str) -> [[[u8; 8]; 8]; 19] {
     // 1. On transforme la chaîne FEN en un objet Board
     // .expect() fera crasher le moteur si la FEN est invalide (rare en UCI)
-    let board = Board::from_str(fen_str).expect("FEN invalide");
+    let fen: Fen = fen_str.parse().expect("FEN syntaxiquement invalide");
+    let pos: Chess = fen.into_position(CastlingMode::Standard).expect("Conversion fen -> chess invalide");
 
     // 2. On appelle la fonction de conversion
-    board_to_tensor(&board)
+    board_to_tensor(&pos)
 }
 
 #[cfg(test)]
@@ -101,7 +78,7 @@ mod tests {
 
     #[test]
     fn test_fen_to_tensor() {
-        /*let fen = "rnbqkbnr/pppppppp/8/8/7P/8/PPPPPPP1/RNBQKBNR b KQkq - 0 1";
+        let fen = "rnbqkbnr/pppppppp/8/8/7P/8/PPPPPPP1/RNBQKBNR b KQkq - 0 1";
         let tensor = fen_to_tensor(fen);
         // On suppose que 'tensor' est de type [[[u8; 8]; 8]; 19]
         println!("Position de départ: ");
@@ -141,7 +118,7 @@ mod tests {
                 // En Rust, {:?} est le formateur de debug pour afficher un tableau entier d'un coup
                 println!("{:?}", tensor[i][ligne]);
             }
-        }*/
+        }
 
         let fen = "rnbqkbnr/p3pppp/1p6/2p5/3p4/5NPB/PPPPPP1P/RNBQK2R b Qkq - 1 5";
         let tensor = fen_to_tensor(fen);

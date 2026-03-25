@@ -2,6 +2,7 @@ use shared_memory::*;
 
 pub struct SharedInterface {
     shm_tensor: Shmem,   // (B, 19, 8, 8) u8
+    shm_legaux: Shmem,   // (B, 584)
     shm_policy: Shmem,   // (B, 4672) f32
     shm_value: Shmem,    // (B) f32
     shm_sync: Shmem,     // (2) u16
@@ -28,6 +29,7 @@ impl SharedInterface {
 
         // On ouvre chaque segment patiemment
         let shm_tensor = open_shm("shm_tensor");
+        let shm_legaux = open_shm("shm_legaux");
         let shm_policy = open_shm("shm_policy");
         let shm_value = open_shm("shm_eval");
         let shm_sync = open_shm("shm_sync");
@@ -37,6 +39,7 @@ impl SharedInterface {
 
         SharedInterface {
             shm_tensor,
+            shm_legaux,
             shm_policy,
             shm_value,
             shm_sync,

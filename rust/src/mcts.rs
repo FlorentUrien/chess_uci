@@ -6,6 +6,7 @@ use ndarray::Axis;
 use std::time::Instant;
 
 use crate::conv::board_to_tensor::board_to_tensor;
+use crate::conv::legaux::coups_legaux;
 
 use self::tree::MctsTree;
 use crate::shared_interface::SharedInterface;
@@ -54,7 +55,7 @@ impl Mcts {
     pub fn search_batch(
         &mut self,
         tree: &mut MctsTree,
-        board: &chess::Board,
+        board: &Chess,
         nb_iterations: u32,
     ) -> anyhow::Result<()> {
         let max_batch = 256;
@@ -67,9 +68,10 @@ impl Mcts {
         if !(tree.nodes[0].is_expanded) {
             // La racine n'est pas étendue, on ne peut pas avancer avant de l'avoir étendue
 
-            let tensor = board_to_tensor(board);
+            let tensor = fen_to_tensor(board.);
             let ptr = tensor.as_ptr() as *const u8;
             self.shared_interface.write_tensors(ptr, 1);
+            let legaux = coups_legaux(board);
 
             // Partie GPU
             let mut size_pred: u16 = 0;
