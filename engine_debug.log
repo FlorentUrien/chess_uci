@@ -1,64 +1,435 @@
-   Compiling Rust v0.1.0 (/home/florent/Rust/chess_uci/rust)
-error[E0433]: failed to resolve: could not find `conv` in the crate root
- --> src/mcts.rs:4:12
-  |
-4 | use super::conv::policy::get_legal_moves_with_probs;
-  |            ^^^^ could not find `conv` in the crate root
-
-error[E0425]: cannot find value `pred` in this scope
-  --> src/mcts.rs:66:60
+warning: function `ecoute_stdin` is never used
+  --> src/main.rs:17:4
    |
-66 |             let coups_legaux = get_legal_moves_with_probs(&pred.5, board);
-   |                                                            ^^^^ not found in this scope
+17 | fn ecoute_stdin(tx: Sender<String>) {
+   |    ^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-warning: unused import: `shared_memory::*`
- --> src/main.rs:1:5
+warning: struct `ProbableMove` is never constructed
+ --> src/conv/policy.rs:5:12
   |
-1 | use shared_memory::*;
-  |     ^^^^^^^^^^^^^^^^
+5 | pub struct ProbableMove {
+  |            ^^^^^^^^^^^^
+
+warning: function `get_legal_moves_with_probs` is never used
+  --> src/conv/policy.rs:18:8
+   |
+18 | pub fn get_legal_moves_with_probs(proba_move: &[f32], board: &Chess) -> Vec<ProbableMove> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `fen_to_tensor` is never used
+  --> src/conv/board_to_tensor.rs:65:8
+   |
+65 | pub fn fen_to_tensor(fen_str: &str) -> [[[u8; 8]; 8]; 19] {
+   |        ^^^^^^^^^^^^^
+
+warning: fields `cpuct` and `virtual_loss` are never read
+  --> src/mcts.rs:16:5
+   |
+15 | pub struct Mcts {
+   |            ---- fields in this struct
+16 |     cpuct: f32,
+   |     ^^^^^
+17 |     virtual_loss: u32,
+   |     ^^^^^^^^^^^^
+
+warning: fields `parent`, `children`, `visit_count`, `value_sum`, `prior_p`, and `is_pending` are never read
+  --> src/mcts/node.rs:5:9
+   |
+ 3 | pub struct Node {
+   |            ---- fields in this struct
+ 4 |     // Liens vers l'Arena (au lieu de pointeurs objets)
+ 5 |     pub parent: Option<usize>,        // Index du parent dans le Vec (8o)
+   |         ^^^^^^
+ 6 |     pub children: Vec<(Move, usize)>, // Liste de (Move (16o), index_noeud_enfant (8o) = 24o)
+   |         ^^^^^^^^
+...
+ 9 |     pub visit_count: u32, // u32 suffit largement pour des simulations (4o)
+   |         ^^^^^^^^^^^
+10 |     pub value_sum: f32,   // Somme des valeurs (Q-value) (4o)
+   |         ^^^^^^^^^
+11 |     pub prior_p: f32,     // Probabilité issue de la policy (4o)
+   |         ^^^^^^^
+...
+15 |     pub is_pending: bool,  // En cours d'exploration ? (1o)
+   |         ^^^^^^^^^^
+
+warning: methods `value` and `select_child` are never used
+  --> src/mcts/node.rs:33:12
+   |
+18 | impl Node {
+   | --------- methods in this implementation
+...
+33 |     pub fn value(&self) -> f32 {
+   |            ^^^^^
+...
+48 |     pub fn select_child(&self, nodes: &[Node], cpuct: f32) -> Option<(Move, usize)> {
+   |            ^^^^^^^^^^^^
+
+warning: field `profondeur` is never read
+ --> src/mcts/tree.rs:6:9
   |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+4 | pub struct MctsTree {
+  |            -------- field in this struct
+5 |     pub nodes: Vec<Node>,
+6 |     pub profondeur: u8,
+  |         ^^^^^^^^^^
 
-warning: unused import: `std::ptr`
- --> src/main.rs:3:5
-  |
-3 | use std::ptr;
-  |     ^^^^^^^^
+warning: methods `expand_node` and `backpropagate` are never used
+  --> src/mcts/tree.rs:25:12
+   |
+ 9 | impl MctsTree {
+   | ------------- methods in this implementation
+...
+25 |     pub fn expand_node(
+   |            ^^^^^^^^^^^
+...
+62 |     pub fn backpropagate(&mut self, leaf_idx: usize, mut value: f32, virtual_loss: u32) {
+   |            ^^^^^^^^^^^^^
 
-warning: unused imports: `debug` and `warn`
- --> src/mcts.rs:9:11
-  |
-9 | use log::{debug, info, warn};
-  |           ^^^^^        ^^^^
+warning: field `batch_size` is never read
+  --> src/shared_interface.rs:10:5
+   |
+ 3 | pub struct SharedInterface {
+   |            --------------- field in this struct
+...
+10 |     batch_size: usize,
+   |     ^^^^^^^^^^
 
-error[E0609]: no field `moteur` on type `&mut Mcts`
-   --> src/mcts.rs:141:30
-    |
-141 |                 let t = self.moteur.fen_to_tensor(&fen)?;
-    |                              ^^^^^^ unknown field
-    |
-    = note: available fields are: `cpuct`, `virtual_loss`
+warning: `Rust` (bin "Rust") generated 10 warnings
+    Finished `release` profile [optimized] target(s) in 0.03s
+     Running `target/release/Rust`
+Démarrage de la partie Rust
+info string Attente de la mémoire partagée (lancez le script Python)...
+Lancement partie Python
+info string Mémoire partagée connectée !
+Rust -> Python (connecte ton model n°1)
+Numéro du modèle lu 1
+Python <- Rust (Je connecte mon model n° {no_model})
+info string Chargement du Modèle /home/florent/Rust/chess_uci/python/models/RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights
+Chargement de l'accélérateur ONNX : /home/florent/Rust/chess_uci/python/models/RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights.onnx
+info string Le chargement du Modèle /home/florent/Rust/chess_uci/python/models/RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights a réussi
+Rust -> demande de prédiction à Python
+Python <- Rust (Demande de prédiction)
+tensor reçu
+[[[[0 0 0 ... 0 0 0]
+   [1 1 1 ... 1 1 1]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
 
-error[E0282]: type annotations needed
-   --> src/mcts.rs:146:53
-    |
-146 |             let views: Vec<_> = tensors.iter().map(|t| t.view()).collect();
-    |                                                     ^  - type must be known at this point
-    |
-help: consider giving this closure parameter an explicit type
-    |
-146 |             let views: Vec<_> = tensors.iter().map(|t: /* Type */| t.view()).collect();
-    |                                                      ++++++++++++
+  [[0 1 0 ... 0 1 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
 
-error[E0609]: no field `moteur` on type `&mut Mcts`
-   --> src/mcts.rs:155:36
-    |
-155 |             let predictions = self.moteur.predict_batch(batch_tensor)?;
-    |                                    ^^^^^^ unknown field
-    |
-    = note: available fields are: `cpuct`, `virtual_loss`
+  [[0 0 1 ... 1 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
 
-Some errors have detailed explanations: E0282, E0425, E0433, E0609.
-For more information about an error, try `rustc --explain E0282`.
-warning: `Rust` (bin "Rust") generated 3 warnings
-error: could not compile `Rust` (bin "Rust") due to 5 previous errors; 3 warnings emitted
+  ...
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[1 1 1 ... 1 1 1]
+   [1 1 1 ... 1 1 1]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [1 1 1 ... 1 1 1]
+   [1 1 1 ... 1 1 1]]]
+
+
+ [[[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  ...
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]]
+
+
+ [[[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  ...
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]]
+
+
+ ...
+
+
+ [[[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  ...
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]]
+
+
+ [[[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  ...
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]]
+
+
+ [[[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  ...
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]
+
+  [[0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   ...
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]
+   [0 0 0 ... 0 0 0]]]]
+coups légaux reçus
+/home/florent/Rust/chess_uci/.venv/lib64/python3.12/site-packages/onnx2torch/node_converters/matmul.py:18: UserWarning: Attempting to use hipBLASLt on an unsupported architecture! Overriding blas backend to hipblas (Triggered internally at ../aten/src/ATen/Context.cpp:296.)
+  return torch.matmul(x, y)
+Rust : prédictions reçues
+Value : 0.1032191
+1 : e2e4 0.9875087
+2 : d2d4 0.008294604
+3 : g1f3 0.003439408
+4 : c2c4 0.00040661977
+5 : b1c3 0.0001257881
+Parent perdu. Nettoyage de la mémoire partagée...
+/usr/lib64/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

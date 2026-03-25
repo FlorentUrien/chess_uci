@@ -38,12 +38,19 @@ def main():
 
     # 2. Il va falloir choisir le bon modèle ONNX à ouvrir
     no_model = interface.wait_for_no_model()
+    
+    print("Python <- Rust (Je connecte mon model n° {no_model})")
 
     if no_model == 1:
         path_model = os.path.join(
-            ".",
+            "/",
+            "home",
+            "florent",
+            "Rust",
+            "chess_uci",
+            "python",
             "models",
-            "RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights.onnx",
+            "RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights",
         )
         modele = charger_modele(path_model)
 
@@ -53,11 +60,11 @@ def main():
             # Cette fonction bloque jusqu'à ce que sync[0] != 0
             current_batch_size = interface.wait_for_input()
 
+            print("Python <- Rust (Demande de prédiction)")
             # 4. Récupération des données depuis la mémoire partagée
             # L'interface te donne déjà une vue Numpy (self.tensor)
             input_tensor = interface.tensor
             print("tensor reçu")
-            print(f"{input_tensor}")
             
             input_legaux = interface.legaux
             print("coups légaux reçus")

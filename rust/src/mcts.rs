@@ -2,18 +2,15 @@ pub mod node;
 pub mod tree;
 
 // use super::conv::policy::get_legal_moves_with_probs;
-use ndarray::Axis;
-use std::time::Instant;
 
+use crate::conv::board_to_tensor::board_to_tensor;
 use crate::conv::from_ia::ia_to_real;
 use crate::conv::legaux::coups_legaux;
-use crate::conv::{board_to_tensor::board_to_tensor, policy};
-use crate::mcts::node::Node;
 
 use self::tree::MctsTree;
 use crate::shared_interface::SharedInterface;
-use log::{debug, info, warn};
-use shakmaty::{Chess, EnPassantMode, Move, Position, fen::Fen};
+use nix::libc::sleep;
+use shakmaty::Chess;
 
 pub struct Mcts {
     cpuct: f32,
@@ -58,14 +55,21 @@ impl Mcts {
         &mut self,
         tree: &mut MctsTree,
         board: &mut Chess,
-        nb_iterations: u32,
+        _nb_iterations: u32,
     ) -> anyhow::Result<()> {
         let max_batch = 256;
-        let mut nb_it: u32 = 0;
+        let _nb_it: u32 = 0;
         // Pour stocker les noeuds en cours d'expension
-        let mut nodes_exp: Vec<usize> = Vec::with_capacity(max_batch as usize);
+        let _nodes_exp: Vec<usize> = Vec::with_capacity(max_batch as usize);
         // Pour stocker les boards des noeuds en cours d'expension
-        let mut board_exp: Vec<Chess> = Vec::with_capacity(max_batch as usize);
+        let _board_exp: Vec<Chess> = Vec::with_capacity(max_batch as usize);
+
+        println!("Rust -> Python (connecte ton model n°1)");
+        self.shared_interface.write_no_model(1);
+
+        unsafe {
+            sleep(5);
+        }
 
         if !(tree.nodes[0].is_expanded) {
             // La racine n'est pas étendue, on ne peut pas avancer avant de l'avoir étendue
@@ -77,10 +81,12 @@ impl Mcts {
             self.shared_interface.write_tensors(ptr, ptr_legaux, 1);
 
             // Prédiction GPU
+            println!("Rust -> demande de prédiction à Python");
             let mut size_pred: u16 = 0;
             while size_pred == 0 {
                 size_pred = self.shared_interface.is_output_ready();
             }
+            println!("Rust : prédictions reçues");
 
             let value = self.shared_interface.get_value(0);
             let policy = self.shared_interface.get_sorted_moves(0, &legaux);

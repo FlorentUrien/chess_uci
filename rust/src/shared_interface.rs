@@ -100,7 +100,7 @@ impl SharedInterface {
     pub fn is_output_ready(&self) -> u16 {
         unsafe {
             let ptr = self.shm_sync.as_ptr() as *const u16;
-            std::ptr::read_volatile(ptr.add(1))
+            std::ptr::read_volatile(ptr)
         }
     }
 
