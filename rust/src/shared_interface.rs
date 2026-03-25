@@ -48,13 +48,49 @@ impl SharedInterface {
         }
     }
 
-    // Une méthode propre pour lire la "Value" d'un index précis du batch
-    /*fn get_value(&self, batch_idx: usize) -> f32 {
+    /// Une méthode propre pour lire la "Value" d'un index précis du batch
+    pub fn get_value(&self, batch_idx: usize) -> f32 {
         unsafe {
             let ptr = self.shm_value.as_ptr() as *const f32;
             std::ptr::read_volatile(ptr.add(batch_idx))
         }
-    }*/
+    }
+
+    /// Récupère la "Policy" (les probabilités de coups) pour un index du batch
+    pub fn get_policy(&self, batch_idx: usize) -> Vec<f32> {
+        // 1. On prépare un vecteur pour accueillir les 4672 scores
+        let mut policy = vec![0.0f32; 4672];
+
+        unsafe {
+            // 2. On récupère le pointeur vers le début du segment de policy
+            let ptr = self.shm_policy.as_ptr() as *const f32;
+
+            // 3. On calcule le décalage (chaque entrée du batch fait 4672 flottants)
+            let offset_ptr = ptr.add(batch_idx * 4672);
+
+            // 4. On copie proprement la mémoire du segment vers notre vecteur Rust
+            std::ptr::copy_nonoverlapping(offset_ptr, policy.as_mut_ptr(), 4672);
+        }
+        policy
+    }
+
+    /// Pour récupéter les mouvements légaux classés par probabilité décroissante
+    pub fn get_sorted_moves(&self, batch_idx: usize, mask: &[u8; 584]) -> Vec<(usize, f32)> {
+        let raw_policy = self.get_policy(batch_idx);
+        let mut legal_scored = Vec::with_capacity(64);
+
+        for idx in 0..4672 {
+            // On vérifie le bit dans le masque
+            if (mask[idx / 8] & (1 << (idx % 8))) != 0 {
+                legal_scored.push((idx, raw_policy[idx]));
+            }
+        }
+
+        // Tri par score décroissant
+        legal_scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        legal_scored
+    }
 
     /// Vérifier si Python a fini (Flag Sync)
     ///
@@ -72,18 +108,37 @@ impl SharedInterface {
     ///
     /// # Arguments
     /// * `tensor` - Les tensors aplatis
+    /// * `legaux` - Les coups légaux aplatis
     /// * `batch_size` - La taille du batch
     ///
     /// # Retour
-    pub fn write_tensors(&self, tensor: *const u8, batch_size: u16) {
+    pub fn write_tensors(&self, tensor: *const u8, legaux: *const u8, batch_size: u16) {
         unsafe {
             std::ptr::copy_nonoverlapping(
                 tensor,
                 self.shm_tensor.as_ptr(),
                 1216 * batch_size as usize,
             );
+            self.write_legaux(legaux, batch_size);
             let sync_ptr = self.shm_sync.as_ptr() as *mut u16;
             std::ptr::write_volatile(sync_ptr.add(1), batch_size);
+        }
+    }
+
+    /// Ecris les tenseurs à passer à l'IA
+    ///
+    /// # Arguments
+    /// * `legaux` - Les coups légaux aplatis
+    /// * `batch_size` - La taille du batch
+    ///
+    /// # Retour
+    fn write_legaux(&self, legaux: *const u8, batch_size: u16) {
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                legaux,
+                self.shm_legaux.as_ptr(),
+                584 * batch_size as usize,
+            );
         }
     }
 

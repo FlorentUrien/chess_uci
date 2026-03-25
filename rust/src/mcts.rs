@@ -5,8 +5,9 @@ pub mod tree;
 use ndarray::Axis;
 use std::time::Instant;
 
-use crate::conv::board_to_tensor::board_to_tensor;
+use crate::conv::{board_to_tensor::board_to_tensor, policy};
 use crate::conv::legaux::coups_legaux;
+use crate::conv::from_ia::ia_to_real;
 
 use self::tree::MctsTree;
 use crate::shared_interface::SharedInterface;
@@ -68,16 +69,28 @@ impl Mcts {
         if !(tree.nodes[0].is_expanded) {
             // La racine n'est pas étendue, on ne peut pas avancer avant de l'avoir étendue
 
-            let tensor = fen_to_tensor(board.);
+            let tensor = board_to_tensor(board);
             let ptr = tensor.as_ptr() as *const u8;
-            self.shared_interface.write_tensors(ptr, 1);
             let legaux = coups_legaux(board);
-
-            // Partie GPU
+            let ptr_legaux = legaux.as_ptr() as *const u8;
+            self.shared_interface.write_tensors(ptr, ptr_legaux, 1);
+            
+            // Prédiction GPU
             let mut size_pred: u16 = 0;
             while size_pred == 0 {
                 size_pred = self.shared_interface.is_output_ready();
             }
+
+            let value = self.shared_interface.get_value(0);
+            let policy=self.shared_interface.get_sorted_moves(0, &legaux);
+
+            println!("Value : {value}");
+            for i in 0..5 {
+                println!("{} : {} {}", i+1,ia_to_real(policy[i].0, board).unwrap(), policy[i].1);
+            }
+        }
+        /*
+
 
             
             
@@ -194,7 +207,8 @@ impl Mcts {
             board_exp.clear();
         }
         Ok(())
-    }
+    }*/
+    Ok(())
 }
 
 #[cfg(test)]

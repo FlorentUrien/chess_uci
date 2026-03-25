@@ -7,7 +7,7 @@ use std::time::Duration;
 
 // use crate::uci::Uci;
 
-//mod mcts;
+mod mcts;
 mod conv;
 // mod uci;
 mod shared_interface;
