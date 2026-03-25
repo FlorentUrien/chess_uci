@@ -1,6 +1,7 @@
 import os
 import time
 import threading
+import numpy as np
 from shared_interface import SharedInterface
 from moteur_ia import charger_modele
 from multiprocessing import shared_memory
@@ -50,26 +51,43 @@ def main():
         while True:
             # 3. On attend que Rust dise "J'ai fini d'écrire les positions"
             # Cette fonction bloque jusqu'à ce que sync[0] != 0
-            interface.wait_for_input()
+            current_batch_size = interface.wait_for_input()
 
             # 4. Récupération des données depuis la mémoire partagée
             # L'interface te donne déjà une vue Numpy (self.tensor)
             input_tensor = interface.tensor
             print("tensor reçu")
             print(f"{input_tensor}")
+            
+            input_legaux = interface.legaux
+            print("coups légaux reçus")
 
             # 5. Inférence (Le moment où le GPU travaille)
             # Predictor retourne un dict avec 'policy', 'value', etc.
-            predictions = modele.predict(input_tensor)
+            predictions = modele.predict(input_tensor[:current_batch_size])
+            
+            # 5.5 Filtrage par les coups légaux
+            # On transforme les octets (584) en bits (4672) pour tout le batch d'un coup
+            # 'big' ou 'little' à tester selon ton remplissage Rust
+            mask = np.unpackbits(input_legaux[:current_batch_size], axis=1, bitorder='big')
+
+            # On applique le masque : les coups illégaux deviennent 0.0
+            # predictions['policy'] est (batch, 4672)
+            filtered_policy = predictions['policy'][:current_batch_size] * mask
+
+            # Re-normalisation (Softmax après filtrage)
+            # On ajoute une infime valeur (1e-10) pour éviter la division par zéro
+            sums = filtered_policy.sum(axis=1, keepdims=True) + 1e-10
+            final_policy = filtered_policy / sums
 
             # 6. On recopie les résultats dans la mémoire partagée pour Rust
             # On utilise [:] pour modifier le contenu du segment sans casser la vue
-            interface.policy[:] = predictions['policy']
-            interface.value[:] = predictions['value']
+            interface.policy[:current_batch_size] = final_policy
+            interface.value[:current_batch_size] = predictions['value'][:current_batch_size]
 
             # 7. On signale à Rust que c'est prêt
             # On lui renvoie la taille du batch pour qu'il sache combien lire
-            interface.signal_output_ready(batch_size=len(predictions))
+            interface.signal_output_ready(current_batch_size)
 
     except KeyboardInterrupt:
         print("\nArrêt de l'IA...")

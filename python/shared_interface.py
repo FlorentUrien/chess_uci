@@ -13,6 +13,7 @@ class SharedInterface:
 
         Cette interface gère trois segments principaux :
         1. (Rust -> Python) Tenseurs d'entrée de l'IA (u8) : Format (batch_size, 19, 8, 8).
+        1b. (Rust -> Python) Les coups légaux : Format (batch_size, 584)
         2. (Python -> Rust) Policy, les probabilités de coups théoriques possibles (f32) : Format (batch_size, 4672)
         3. (Python -> Rust) Evaluation (f32), le score de la position : Format (batch_size)
         4. (Python <-> Rust) Synch (u8) : Format(2)
@@ -37,6 +38,7 @@ class SharedInterface:
             8,
             8,
         )  # Les tensors d'entrée du réseau IA (en relatif)
+        self.shape_legaux = (batch_size, 584)  # Le filtre sur les coups légaux
         self.shape_policy = (
             batch_size,
             4672,
@@ -55,6 +57,11 @@ class SharedInterface:
         self.shm_tensor = self._get_shm(
             "shm_tensor",
             np.prod(self.shape_tensor) * np.dtype(np.uint8).itemsize,
+            create,
+        )
+        self.shm_legaux = self._get_shm(
+            "shm_legaux",
+            np.prod(self.shape_legaux),
             create,
         )
         self.shm_policy = self._get_shm(
@@ -79,6 +86,9 @@ class SharedInterface:
         self.tensor = np.ndarray(
             self.shape_tensor, dtype=np.uint8, buffer=self.shm_tensor.buf
         )
+        self.legaux = np.ndarray(
+            self.shape_legaux, dtype=np.uint8, buffer=self.shm_legaux.buf
+        )
         self.policy = np.ndarray(
             self.shape_policy, dtype=np.float32, buffer=self.shm_policy.buf
         )
@@ -91,6 +101,33 @@ class SharedInterface:
         self.no_model = np.ndarray(
             self.shape_no_model, dtype=np.uint8, buffer=self.shm_no_model.buf
         )
+
+    def get_masked_policy(self, raw_policy, batch_idx):
+        """
+        Applique le masque des coups légaux sur la sortie brute du réseau.
+
+        Args:
+            raw_policy: Le tenseur (4672,) sortant du Softmax ou du dernier layer
+            batch_idx: L'index dans le batch en cours
+        """
+        # 1. On récupère les 584 octets du masque pour cet index de batch
+        raw_mask_bytes = self.legaux[batch_idx]
+
+        # 2. On déplie les bits : 584 octets -> 4672 floats (0.0 ou 1.0)
+        # bitorder='big' ou 'little' : à tester selon comment Rust écrit tes octets !
+        legal_mask = np.unpackbits(raw_mask_bytes, bitorder="big").astype(np.float32)
+
+        # 3. On multiplie élément par élément
+        # Tous les coups illégaux deviennent 0.0
+        masked_policy = raw_policy * legal_mask
+
+        # 4. On re-normalise pour que la somme des probabilités soit 1.0
+        somme = np.sum(masked_policy)
+        if somme > 0:
+            return masked_policy / somme
+        else:
+            # Cas rare : aucun coup légal trouvé (mat ou pat)
+            return masked_policy
 
     def _get_shm(self, name, size, create):
         try:
@@ -111,7 +148,10 @@ class SharedInterface:
         """Attend que Rust ait rempli le batch de tenseurs"""
         while self.sync[1] == 0:
             pass
+        ret = self.sync[1]
         self.sync[1] = 0  # On consomme le signal
+        
+        return ret
 
     def wait_for_no_model(self) -> int:
         """Attend que Rust ait rempli le no du modèle que l'on va utiliser"""

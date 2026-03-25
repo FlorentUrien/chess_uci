@@ -76,6 +76,8 @@ impl Mcts {
             while size_pred == 0 {
                 size_pred = self.shared_interface.is_output_ready();
             }
+
+            
             
             let coups_legaux = get_legal_moves_with_probs(&pred.5, board);
             let coups_pour_arbre: Vec<(Move, f32)> = coups_legaux
