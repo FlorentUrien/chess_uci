@@ -5,13 +5,17 @@ pub mod tree;
 use ndarray::Axis;
 use std::time::Instant;
 
+use crate::conv::board_to_tensor::board_to_tensor;
+
 use self::tree::MctsTree;
+use crate::shared_interface::SharedInterface;
 use log::{debug, info, warn};
-use shakmaty::{fen::Fen, Chess, EnPassantMode, Move, Position};
+use shakmaty::{Chess, EnPassantMode, Move, Position, fen::Fen};
 
 pub struct Mcts {
     cpuct: f32,
     virtual_loss: u32,
+    shared_interface: SharedInterface,
 }
 
 impl Mcts {
@@ -29,10 +33,11 @@ impl Mcts {
     ///
     /// # Retour
     /// MonteCarlo Training Search
-    pub fn new(cpuct: f32, virtual_loss: u32) -> Self {
+    pub fn new(cpuct: f32, virtual_loss: u32, shared_interface: SharedInterface) -> Self {
         Self {
             cpuct,
             virtual_loss,
+            shared_interface,
         }
     }
 
@@ -49,7 +54,7 @@ impl Mcts {
     pub fn search_batch(
         &mut self,
         tree: &mut MctsTree,
-        board: &Chess,
+        board: &chess::Board,
         nb_iterations: u32,
     ) -> anyhow::Result<()> {
         let max_batch = 256;
@@ -61,8 +66,17 @@ impl Mcts {
 
         if !(tree.nodes[0].is_expanded) {
             // La racine n'est pas étendue, on ne peut pas avancer avant de l'avoir étendue
+
+            let tensor = board_to_tensor(board);
+            let ptr = tensor.as_ptr() as *const u8;
+            self.shared_interface.write_tensors(ptr, 1);
+
+            // Partie GPU
+            let mut size_pred: u16 = 0;
+            while size_pred == 0 {
+                size_pred = self.shared_interface.is_output_ready();
+            }
             
-            // let pred = self.moteur.predict(&board)?;
             let coups_legaux = get_legal_moves_with_probs(&pred.5, board);
             let coups_pour_arbre: Vec<(Move, f32)> = coups_legaux
                 .iter()
@@ -181,7 +195,7 @@ impl Mcts {
 
 #[cfg(test)]
 mod tests {
-    use shakmaty::{fen::Fen, CastlingMode};
+    use shakmaty::{CastlingMode, fen::Fen};
 
     use super::*;
     use crate::{

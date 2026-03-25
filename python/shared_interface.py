@@ -68,7 +68,7 @@ class SharedInterface:
             create,
         )
         self.shm_sync = self._get_shm(
-            "shm_sync", 2 * np.dtype(np.uint8).itemsize, create
+            "shm_sync", 2 * np.dtype(np.uint16).itemsize, create
         )
 
         self.shm_no_model = self._get_shm(
@@ -86,7 +86,7 @@ class SharedInterface:
             self.shape_value, dtype=np.float32, buffer=self.shm_eval.buf
         )
         self.sync = np.ndarray(
-            self.shape_sync, dtype=np.uint8, buffer=self.shm_sync.buf
+            self.shape_sync, dtype=np.uint16, buffer=self.shm_sync.buf
         )
         self.no_model = np.ndarray(
             self.shape_no_model, dtype=np.uint8, buffer=self.shm_no_model.buf
@@ -109,9 +109,9 @@ class SharedInterface:
 
     def wait_for_input(self):
         """Attend que Rust ait rempli le batch de tenseurs"""
-        while self.sync[0] == 0:
+        while self.sync[1] == 0:
             pass
-        self.sync[0] = 0  # On consomme le signal
+        self.sync[1] = 0  # On consomme le signal
 
     def wait_for_no_model(self) -> int:
         """Attend que Rust ait rempli le no du modèle que l'on va utiliser"""
