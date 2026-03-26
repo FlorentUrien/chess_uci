@@ -68,6 +68,8 @@ def main():
             
             input_legaux = interface.legaux
             print("coups légaux reçus")
+            
+            
 
             # 5. Inférence (Le moment où le GPU travaille)
             # Predictor retourne un dict avec 'policy', 'value', etc.

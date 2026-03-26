@@ -16,6 +16,7 @@ pub struct Mcts {
     cpuct: f32,
     virtual_loss: u32,
     shared_interface: SharedInterface,
+    move_buffer: Vec<(usize, f32)>,
 }
 
 impl Mcts {
@@ -38,6 +39,7 @@ impl Mcts {
             cpuct,
             virtual_loss,
             shared_interface,
+            move_buffer: Vec::with_capacity(64),
         }
     }
 
@@ -89,15 +91,17 @@ impl Mcts {
             println!("Rust : prédictions reçues");
 
             let value = self.shared_interface.get_value(0);
-            let policy = self.shared_interface.get_sorted_moves(0, &legaux);
+            self.shared_interface
+                .fill_sorted_moves(0, &legaux, &mut self.move_buffer);
+            self.shared_interface.reset_flag_prediction();
 
             println!("Value : {value}");
-            for i in 0..5 {
+            for (i, (m_idx, prob)) in self.move_buffer.iter().take(5).enumerate() {
                 println!(
                     "{} : {} {}",
                     i + 1,
-                    ia_to_real(policy[i].0, &board).unwrap(),
-                    policy[i].1
+                    ia_to_real(*m_idx, &board).unwrap(),
+                    prob
                 );
             }
         }

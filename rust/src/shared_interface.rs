@@ -48,6 +48,14 @@ impl SharedInterface {
         }
     }
 
+    /// Une fois les prédictions lues il faut reset le flag
+    pub fn reset_flag_prediction(&self) {
+        unsafe {
+            let sync_ptr = self.shm_sync.as_ptr() as *mut u16;
+            std::ptr::write_volatile(sync_ptr, 0);
+        }
+    }
+
     /// Une méthode propre pour lire la "Value" d'un index précis du batch
     pub fn get_value(&self, batch_idx: usize) -> f32 {
         unsafe {
@@ -56,40 +64,38 @@ impl SharedInterface {
         }
     }
 
-    /// Récupère la "Policy" (les probabilités de coups) pour un index du batch
-    pub fn get_policy(&self, batch_idx: usize) -> Vec<f32> {
-        // 1. On prépare un vecteur pour accueillir les 4672 scores
-        let mut policy = vec![0.0f32; 4672];
-
-        unsafe {
-            // 2. On récupère le pointeur vers le début du segment de policy
+    // On passe une référence mutable au vecteur pour le recycler
+    pub fn fill_sorted_moves(
+        &self,
+        batch_idx: usize,
+        mask: &[u8; 584],
+        output: &mut Vec<(usize, f32)>,
+    ) {
+        // On crée une "vue" (slice) sur la mémoire partagée SANS COPIE
+        let raw_policy: &[f32] = unsafe {
             let ptr = self.shm_policy.as_ptr() as *const f32;
-
-            // 3. On calcule le décalage (chaque entrée du batch fait 4672 flottants)
             let offset_ptr = ptr.add(batch_idx * 4672);
+            std::slice::from_raw_parts(offset_ptr, 4672) // Accès direct à la SHM
+        };
 
-            // 4. On copie proprement la mémoire du segment vers notre vecteur Rust
-            std::ptr::copy_nonoverlapping(offset_ptr, policy.as_mut_ptr(), 4672);
-        }
-        policy
-    }
+        // On vide le vecteur sans désallouer sa mémoire
+        output.clear();
 
-    /// Pour récupéter les mouvements légaux classés par probabilité décroissante
-    pub fn get_sorted_moves(&self, batch_idx: usize, mask: &[u8; 584]) -> Vec<(usize, f32)> {
-        let raw_policy = self.get_policy(batch_idx);
-        let mut legal_scored = Vec::with_capacity(64);
-
-        for idx in 0..4672 {
-            // On vérifie le bit dans le masque
-            if (mask[idx / 8] & (1 << (idx % 8))) != 0 {
-                legal_scored.push((idx, raw_policy[idx]));
+        for (byte_idx, &byte) in mask.iter().enumerate() {
+            if byte == 0 {
+                continue;
+            }
+            for bit_idx in 0..8 {
+                if (byte & (1 << bit_idx)) != 0 {
+                    let idx = (byte_idx << 3) | bit_idx;
+                    unsafe {
+                        output.push((idx, *raw_policy.get_unchecked(idx)));
+                    }
+                }
             }
         }
 
-        // Tri par score décroissant
-        legal_scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-
-        legal_scored
+        output.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     }
 
     /// Vérifier si Python a fini (Flag Sync)
