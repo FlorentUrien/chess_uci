@@ -1,11 +1,12 @@
 pub mod node;
 pub mod tree;
+use std::time::{Duration, Instant};
 
 // use super::conv::policy::get_legal_moves_with_probs;
 
-use crate::conv::board_to_tensor::board_to_tensor;
 use crate::conv::from_ia::ia_to_real;
 use crate::conv::legaux::coups_legaux;
+use crate::{conv::board_to_tensor::board_to_tensor, shared_interface};
 
 use self::tree::MctsTree;
 use crate::shared_interface::SharedInterface;
@@ -60,7 +61,7 @@ impl Mcts {
         board: &mut Chess,
         nb_iterations: u32,
     ) -> anyhow::Result<()> {
-        let max_batch = 256;
+        let max_batch = 512;
         let mut nb_it = 1;
         // Pour stocker les noeuds en cours d'expension
         let mut nodes_exp: Vec<usize> = Vec::with_capacity(max_batch as usize);
@@ -73,6 +74,8 @@ impl Mcts {
         unsafe {
             sleep(5);
         }
+        let mut duree_python = 0;
+        let mut duree_rust = 0;
 
         if !(tree.nodes[0].is_expanded) {
             // La racine n'est pas étendue, on ne peut pas avancer avant de l'avoir étendue
@@ -89,26 +92,21 @@ impl Mcts {
             while size_pred == 0 {
                 size_pred = self.shared_interface.is_output_ready();
             }
-            println!("Rust : prédictions reçues");
+            println!("rootRust : prédictions reçues");
 
             let value = self.shared_interface.get_value(0);
+            tree.nodes[0].value_sum = value;
             self.shared_interface
                 .fill_sorted_moves(0, &legaux, &mut self.move_buffer);
             self.shared_interface.reset_flag_prediction();
 
-            println!("Value : {value}");
-            for (i, (m_idx, prob)) in self.move_buffer.iter().take(5).enumerate() {
-                println!(
-                    "{} : {} {}",
-                    i + 1,
-                    ia_to_real(*m_idx, &board).unwrap(),
-                    prob
-                );
-            }
-
             // J'ai les mouvements légaux classés par ordre de probabilité décroissante dans move_buffer
             tree.expand_node(0, &self.move_buffer, board);
             tree.profondeur = 1;
+
+            tree.affiche_sonnet();
+
+            //tree.affiche();
         }
 
         info!(
@@ -117,15 +115,18 @@ impl Mcts {
             tree.profondeur
         );
 
+        let top = Instant::now();
+        let mut duree_python: Duration = Duration::ZERO;
+
         while nb_it < nb_iterations {
             let batch_size = match nb_it {
-                0..=299 => 32,
-                300..=999 => 64,
-                1000..=3999 => 128,
+                0..=299 => 64,
+                300..=999 => 128,
+                1000..=3999 => 256,
                 _ => max_batch, // Le '_' capture tout le reste (le "else")
             };
 
-            // 1. Phase de collecte (Beaucoup plus simple !)
+            // 1. Phase de collecte
             for _ in 0..batch_size {
                 let mut node_index = 0;
                 let mut current_prof = 0;
@@ -133,7 +134,6 @@ impl Mcts {
                 let mut path: Vec<usize> = Vec::new();
 
                 while tree.nodes[node_index].is_expanded {
-                    println!("{} est étendu", node_index);
                     path.push(node_index);
                     tree.nodes[node_index].visit_count += self.virtual_loss;
 
@@ -164,8 +164,6 @@ impl Mcts {
                     break;
                 }
 
-                println!("{} n'est pas étendu", node_index);
-
                 if current_prof > tree.profondeur {
                     tree.profondeur = current_prof;
                     info!("{}n / {}p", tree.nodes.len(), tree.profondeur);
@@ -193,7 +191,6 @@ impl Mcts {
                         tree.nodes[node_index].is_pending = true;
                         nodes_exp.push(node_index);
                         board_exp.push(board_temp);
-                        println!("{} noeud(s) en attente pour le GPU", nodes_exp.len());
                     }
                 }
             }
@@ -232,60 +229,55 @@ impl Mcts {
                 current_batch_size as u16,
             );
 
+            let top_python = Instant::now();
+
             // 3. Phase de prédiction (GPU)
 
             let mut size_pred = 0;
             while size_pred == 0 {
                 size_pred = self.shared_interface.is_output_ready();
             }
+            duree_python += Instant::now() - top_python;
             println!("Rust : {} prédictions reçues", size_pred);
 
-            /*
+            // 4. On étend l'arbre
+            for i in 0..size_pred {
+                let i_usize = i as usize;
+                let start = i_usize * 584;
+                let end = start + 584;
 
-            // 2. Phase de prédictions (GPU)
-            // 2.1 Préparation du batch
-            let mut tensors = Vec::with_capacity(board_exp.len());
+                // On récupère la tranche de 584 octets
+                let mask_slice = &batch_legal[start..end];
 
-            for b in &board_exp {
-                let fen = Fen::from_position(&b.clone(), EnPassantMode::Always).to_string();
-                // 1. Le '?' à la fin extrait le tenseur et gère l'erreur
-                let t = self.moteur.fen_to_tensor(&fen)?;
-                tensors.push(t);
-            }
+                // On convertit la slice en référence de tableau fixe (le compilateur vérifie la taille)
+                let mask_array: &[u8; 584] =
+                    mask_slice.try_into().expect("Taille de masque invalide");
 
-            // 2.1.1 On prépare des "vues" sur nos petits tenseurs
-            let views: Vec<_> = tensors.iter().map(|t| t.view()).collect();
-
-            // 2.1.2 On fusionne tous les (1, 19, 8, 8) en un seul gros tenseur (N, 19, 8, 8)
-            // C'est ça que ta Radeon 6650xt va pouvoir traiter d'un coup
-            let batch_tensor = ndarray::concatenate(Axis(0), &views)?;
-            let taille_batch = batch_tensor.len();
-
-            // 2.2 Injection du batch au GPU
-            let debut_gpu = Instant::now();
-            let predictions = self.moteur.predict_batch(batch_tensor)?;
-            let duree_gpu = debut_gpu.elapsed();
-            info!("Batch {}, en {:?}", predictions.len(), duree_gpu);
-
-            // 3. Phase d'expansion
-            for i in 0..predictions.len() {
-                let v = predictions[i].0;
-                let p = &predictions[i].5;
-                let coups_legaux = get_legal_moves_with_probs(p, &board_exp[i]);
-                // On transforme le Vec<ProbableMove> en Vec<(Move, f32)>
-                let coups_pour_arbre: Vec<(Move, f32)> = coups_legaux
-                    .iter()
-                    .map(|m| (m.mvt.clone(), m.prob))
-                    .collect();
-
-                tree.expand_node(nodes_exp[i], &coups_pour_arbre);
-                tree.backpropagate(nodes_exp[i], v, self.virtual_loss);
-                tree.nodes[nodes_exp[i]].is_pending = false;
+                let value = self.shared_interface.get_value(i as usize);
+                tree.nodes[nodes_exp[i as usize]].value_sum = value;
+                self.shared_interface
+                    .fill_sorted_moves(0, mask_array, &mut self.move_buffer);
+                tree.expand_node(
+                    nodes_exp[i as usize],
+                    &self.move_buffer,
+                    &board_exp[i as usize],
+                );
+                tree.backpropagate(nodes_exp[i as usize], value, self.virtual_loss);
                 nb_it += 1;
             }
+            self.shared_interface.free_python();
+            //tree.affiche();
+            tree.affiche_sonnet();
+
             nodes_exp.clear();
-            board_exp.clear();*/
+            board_exp.clear();
         }
+        let duree_totale = Instant::now() - top;
+        let duree_rust = duree_totale - duree_python;
+        println!(
+            "Total : {:?}, Python: {:?}, Rust: {:?}",
+            duree_totale, duree_python, duree_rust
+        );
         Ok(())
     }
 }

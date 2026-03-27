@@ -131,6 +131,13 @@ impl SharedInterface {
         }
     }
 
+    pub fn free_python(&self) {
+        unsafe {
+            let sync_ptr = self.shm_sync.as_ptr() as *mut u16;
+            std::ptr::write_volatile(sync_ptr, 0);
+        }
+    }
+
     /// Ecris les tenseurs à passer à l'IA
     ///
     /// # Arguments

@@ -1,5 +1,5 @@
 use std::io::{self, BufRead};
-use std::sync::mpsc::{Sender};
+use std::sync::mpsc::Sender;
 
 mod conv;
 mod mcts;
@@ -8,7 +8,7 @@ mod shared_interface;
 
 use crate::mcts::node::Node;
 use crate::mcts::tree::MctsTree;
-use shakmaty::Chess;
+use shakmaty::{CastlingMode, Chess, fen::Fen};
 
 /// Gère le thread d'écoute du stdin pour capter les échanges uci avec Cutechess
 ///
@@ -29,14 +29,39 @@ fn ecoute_stdin(tx: Sender<String>) {
 
 fn main() {
     env_logger::init();
-    
+
     println!("Démarrage de la partie Rust");
     let shared_interface = shared_interface::SharedInterface::new(512);
     let mut mcts = mcts::Mcts::new(2.0, 10, shared_interface);
     let new_root = Node::new(None, 1.0);
     let mut new_tree = MctsTree::new(new_root);
-    let mut new_board = Chess::new();
-    mcts.search_batch(&mut new_tree, &mut new_board, 20000).expect("Ton ku");
+    /*let fen: Fen = "2k4r/ppp1q1b1/B5p1/4np2/8/6r1/PPQ2PPP/R4RK1 b - - 0 18"
+    .parse()
+    .expect("tonku");
+    let fen: Fen = "2kr2nr/1pp5/p2p1p1b/1n1P4/4P1q1/1QP2NBb/PP1N1P1K/R5R1 b - - 0 18"
+    .parse()
+    .expect("tonku");
+    let fen: Fen = "1rbqkbnr/pppppppp/8/8/1nB1P3/5Q2/PPPP1PPP/RNB1K1NR w KQk - 0 3"
+        .parse()
+        .expect("tonku");*/
+    let fen: Fen = "r2qkb1r/pp2pppp/2n2n2/3p1b2/3p1B2/2N2N1P/PPPQPPP1/R3KB1R b KQkq - 5 7"
+        .parse()
+        .expect("tonku");
+    let mut new_board: Chess = fen.into_position(CastlingMode::Standard).expect("tonku");
+    // let mut new_board = Chess::new();
+    mcts.search_batch(&mut new_tree, &mut new_board, 200000)
+        .expect("Ton ku");
+    println!(
+        "Meilleur coup = {}",
+        new_tree.choisir_meilleur_coup().unwrap()
+    );
+    let meilleurs_coups = new_tree.choisir_5_meilleurs_coups();
+
+    if let Some(meilleur) = meilleurs_coups.first() {
+        println!("Meilleur coup = {}", meilleur);
+    } else {
+        println!("Aucun coup trouvé !");
+    }
 
     /*     let shared_mem = shared_interface::SharedInterface::new(512);
     let mut uci = Uci::new(shared_mem);

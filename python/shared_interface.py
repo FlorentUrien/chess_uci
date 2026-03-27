@@ -149,9 +149,12 @@ class SharedInterface:
         while self.sync[1] == 0:
             pass
         ret = self.sync[1]
-        self.sync[1] = 0  # On consomme le signal
-        
+
         return ret
+
+    def free_rust(self):
+        """On a lu les données de rust, on libère la sm"""
+        self.sync[1] = 0
 
     def wait_for_no_model(self) -> int:
         """Attend que Rust ait rempli le no du modèle que l'on va utiliser"""
