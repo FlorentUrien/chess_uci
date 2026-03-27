@@ -61,6 +61,10 @@ impl Node {
         for (mv, child_idx) in &self.children {
             let child = &nodes[*child_idx]; // Accès sécurisé via l'Arena
 
+            if child.is_pending {
+                continue;
+            }
+
             // Calcul de l'exploration (U-score)
             // Formule : cpuct * P(s,a) * sqrt(Sum(N)) / (1 + N(s,a))
             let u_score =

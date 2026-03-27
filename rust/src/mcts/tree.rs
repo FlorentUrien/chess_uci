@@ -1,5 +1,6 @@
 use super::node::Node;
-use shakmaty::Move;
+use shakmaty::{Chess, Move};
+use crate::conv::from_ia::ia_to_real;
 
 pub struct MctsTree {
     pub nodes: Vec<Node>,
@@ -15,7 +16,7 @@ impl MctsTree {
     }
 
     /// Étend un nœud en lui ajoutant des enfants pour chaque coup légal
-    /// 
+    ///
     /// # Arguments
     /// * `parent_idx` - L'index du nœud que l'on étend
     /// * `coups_legaux` - La liste des coups légaux et leurs probabilités
@@ -25,7 +26,8 @@ impl MctsTree {
     pub fn expand_node(
         &mut self,
         parent_idx: usize,
-        coups_legaux: &[(Move, f32)], // Liste de (index_du_coup, probabilité_policy)
+        coups_legaux: &[(usize, f32)],
+        board: &Chess, // Liste de (index_du_coup, probabilité_policy)
     ) {
         // 1. On vérifie si le nœud n'est pas déjà étendu (sécurité)
         if self.nodes[parent_idx].is_expanded {
@@ -42,8 +44,14 @@ impl MctsTree {
             // 4. On l'ajoute à l'Arena
             self.nodes.push(new_child);
 
-            // 5. On lie l'enfant au parent
-            self.nodes[parent_idx].children.push((mv, child_idx));
+            // 5. On récupère le UciMove depuis ton index IA
+            let uci_m = ia_to_real(mv, board).expect("Index IA invalide");
+
+            // 6. On le convertit en Move réel par rapport au board actuel
+            let m = uci_m.to_move(board).expect("Coup UCI illégal pour cette position");
+
+            // 7. On lie l'enfant au parent
+            self.nodes[parent_idx].children.push((m, child_idx));
         }
 
         // 6. On marque le parent comme étendu
@@ -51,7 +59,7 @@ impl MctsTree {
     }
 
     /// Remonte les résultats de l'évaluation jusqu'à la racine
-    /// 
+    ///
     /// # Arguments
     /// * `leaf_idx` - index du nœud à partir duquel on va remonter
     /// * `value` - La valeur de ce nœud

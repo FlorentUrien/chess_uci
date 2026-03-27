@@ -30,3 +30,4 @@ target/
 # On ignore les fichiers temporaires de Python
 __pycache__/
 *.pyc
+engine_debug.log

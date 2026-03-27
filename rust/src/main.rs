@@ -28,6 +28,8 @@ fn ecoute_stdin(tx: Sender<String>) {
 }
 
 fn main() {
+    env_logger::init();
+    
     println!("Démarrage de la partie Rust");
     let shared_interface = shared_interface::SharedInterface::new(512);
     let mut mcts = mcts::Mcts::new(2.0, 10, shared_interface);

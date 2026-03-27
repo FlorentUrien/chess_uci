@@ -19,4 +19,4 @@ sleep 2
 # 2. On lance Rust en PREMIER PLAN
 # On utilise ">>" pour ajouter à la suite du fichier créé par Python
 cd rust
-cargo run --release >> "../$LOG_FILE" 2>&1
+RUST_LOG=info cargo run --release >> "../$LOG_FILE" 2>&1
