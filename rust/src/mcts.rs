@@ -119,8 +119,7 @@ impl Mcts {
 
         while nb_it < nb_iterations {
             let batch_size = match nb_it {
-                0..=99 => 16,
-                100..=299 => 32,
+                0..=299 => 32,
                 300..=999 => 64,
                 1000..=3999 => 128,
                 _ => max_batch, // Le '_' capture tout le reste (le "else")
@@ -161,7 +160,8 @@ impl Mcts {
                     for &p_node in &path {
                         tree.nodes[p_node].visit_count -= self.virtual_loss;
                     }
-                    continue;
+                    println!("Branche saturée on envoit le batch partiel");
+                    break;
                 }
 
                 println!("{} n'est pas étendu", node_index);
@@ -225,12 +225,21 @@ impl Mcts {
                 batch_tensors.extend_from_slice(flat_slice);
                 batch_legal.extend_from_slice(&coups_legaux(b));
             }
-            
+
             self.shared_interface.write_tensors(
                 batch_tensors.as_ptr(),
                 batch_legal.as_ptr(),
                 current_batch_size as u16,
             );
+
+            // 3. Phase de prédiction (GPU)
+
+            let mut size_pred = 0;
+            while size_pred == 0 {
+                size_pred = self.shared_interface.is_output_ready();
+            }
+            println!("Rust : {} prédictions reçues", size_pred);
+
             /*
 
             // 2. Phase de prédictions (GPU)

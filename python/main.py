@@ -68,8 +68,6 @@ def main():
             
             input_legaux = interface.legaux
             print("coups légaux reçus")
-            
-            
 
             # 5. Inférence (Le moment où le GPU travaille)
             # Predictor retourne un dict avec 'policy', 'value', etc.
@@ -92,7 +90,7 @@ def main():
             # 6. On recopie les résultats dans la mémoire partagée pour Rust
             # On utilise [:] pour modifier le contenu du segment sans casser la vue
             interface.policy[:current_batch_size] = final_policy
-            interface.value[:current_batch_size] = predictions['value'][:current_batch_size]
+            interface.value[:current_batch_size] = predictions['value'][:current_batch_size].flatten()
 
             # 7. On signale à Rust que c'est prêt
             # On lui renvoie la taille du batch pour qu'il sache combien lire
