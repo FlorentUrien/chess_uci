@@ -206,7 +206,7 @@ impl MctsTree {
         };
 
         println!(
-            "{}{}{:?}#{:<5} val={} N={}{}{}",
+            "{}{}{:?}#{:<5} val={} N=VC{}P{}CH{}",
             indent, connector, move_label, idx, val_str, node.visit_count, pending, children_hint
         );
 

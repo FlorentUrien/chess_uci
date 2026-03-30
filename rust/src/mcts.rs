@@ -137,9 +137,6 @@ impl Mcts {
                     path.push(node_index);
                     tree.nodes[node_index].visit_count += self.virtual_loss;
 
-                    // On enlève le bidouillage de la value_sum, on garde juste la virtual_loss classique
-                    // tree.nodes[node_index].value_sum -= self.virtual_loss as f32; // SUPPRIMÉ
-
                     // Si select_child retourne None, ça veut dire que TOUS les enfants
                     // sont "pending" (en attente GPU). Dans ce cas, on ne peut pas descendre.
                     if let Some((mv, idx_node)) =
@@ -177,11 +174,11 @@ impl Mcts {
 
                         if board_temp.is_checkmate() {
                             v_game = -(valeur_mat - (current_prof as f32 * gamma));
+                            println!("Checkmate {}", v_game);
                         }
 
                         for &p_node in &path {
                             tree.nodes[p_node].visit_count -= self.virtual_loss;
-                            tree.nodes[p_node].value_sum += self.virtual_loss as f32; // Nettoyage de la pénalité
                         }
 
                         tree.backpropagate(node_index, v_game, self.virtual_loss);
@@ -197,7 +194,7 @@ impl Mcts {
 
             if nodes_exp.len() == 0 {
                 // Si tout est en attente (pending) et qu'on n'a rien trouvé, on sort
-                break;
+                continue;
             }
 
             // 2. Préparation des données à envoyer via shared memory à Python et donc au GPU
@@ -237,6 +234,7 @@ impl Mcts {
             while size_pred == 0 {
                 size_pred = self.shared_interface.is_output_ready();
             }
+            size_pred = size_pred.min(current_batch_size as u16);
             duree_python += Instant::now() - top_python;
             println!("Rust : {} prédictions reçues", size_pred);
 
@@ -265,7 +263,7 @@ impl Mcts {
                 tree.backpropagate(nodes_exp[i as usize], value, self.virtual_loss);
                 nb_it += 1;
             }
-            self.shared_interface.free_python();
+            self.shared_interface.reset_flag_prediction();
             //tree.affiche();
             tree.affiche_sonnet();
 
