@@ -252,9 +252,8 @@ impl Mcts {
                     mask_slice.try_into().expect("Taille de masque invalide");
 
                 let value = self.shared_interface.get_value(i as usize);
-                tree.nodes[nodes_exp[i as usize]].value_sum = value;
                 self.shared_interface
-                    .fill_sorted_moves(0, mask_array, &mut self.move_buffer);
+                    .fill_sorted_moves(i as usize, mask_array, &mut self.move_buffer);
                 tree.expand_node(
                     nodes_exp[i as usize],
                     &self.move_buffer,

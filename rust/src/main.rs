@@ -40,25 +40,28 @@ fn main() {
     .expect("tonku");*/
     /*let fen: Fen = "2kr2nr/1pp5/p2p1p1b/1n1P4/4P1q1/1QP2NBb/PP1N1P1K/R5R1 b - - 0 18"
     .parse()
-    .expect("tonku");
+    .expect("tonku");*/
     let fen: Fen = "1rbqkbnr/pppppppp/8/8/1nB1P3/5Q2/PPPP1PPP/RNB1K1NR w KQk - 0 3"
         .parse()
-        .expect("tonku");*/
+        .expect("tonku");
     /*let fen: Fen = "r1bqkbnr/p1pp1ppp/1p6/4p1NQ/1n2P3/8/PPPP1PPP/RNB1KB1R w KQkq - 2 5"
         .parse()
-        .expect("tonku");*/
+        .expect("tonku");
     let fen: Fen = "2k4r/ppp1q1b1/B5p1/4np2/8/6r1/PPQ2PPP/R4RK1 b - - 0 18"
         .parse()
-        .expect("tonku");
+        .expect("tonku"); // -M5
+    let fen: Fen = "2kr2nr/1pp5/p2p1p2/1n1P4/4Pbq1/1QP2NBb/PP1N1P1K/R6R b - - 2 19"
+        .parse()
+        .expect("tonku"); // -M4 facile à trouver Bh3-f1+*/
     let mut new_board: Chess = fen.into_position(CastlingMode::Standard).expect("tonku");
     // let mut new_board = Chess::new();
-    mcts.search_batch(&mut new_tree, &mut new_board, 80000)
+    mcts.search_batch(&mut new_tree, &mut new_board, 200000)
         .expect("Ton ku");
     println!(
         "Meilleur coup = {}",
         new_tree.choisir_meilleur_coup().unwrap()
     );
-    let meilleurs_coups = new_tree.choisir_5_meilleurs_coups();
+    let meilleurs_coups = new_tree.choisir_x_meilleurs_coups(40);
 
     if let Some(meilleur) = meilleurs_coups.first() {
         println!("Meilleur coup = {}", meilleur);

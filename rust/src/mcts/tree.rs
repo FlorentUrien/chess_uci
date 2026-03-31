@@ -118,7 +118,7 @@ impl MctsTree {
         }*/
     }
 
-    pub fn choisir_5_meilleurs_coups(&self) -> Vec<Move> {
+    pub fn choisir_x_meilleurs_coups(&self, x:usize) -> Vec<Move> {
         let root = &self.nodes[0];
 
         // 1. On extrait les données en allant chercher DIRECTEMENT dans l'Arena via les child_idx
@@ -141,8 +141,8 @@ impl MctsTree {
         coups_stats.sort_by(|a, b| b.1.cmp(&a.1));
 
         // 3. Affichage pour debug
-        println!("\n--- TOP 5 DES COUPS RÉELLEMENT EXPLORÉS ---");
-        for (i, (mv, n, v)) in coups_stats.iter().take(5).enumerate() {
+        println!("\n--- TOP x DES COUPS RÉELLEMENT EXPLORÉS ---");
+        for (i, (mv, n, v)) in coups_stats.iter().take(x).enumerate() {
             println!(
                 "{}. Coup: {:<6} | Visites: {:<8} | Score moy: {:.4}",
                 i + 1,
