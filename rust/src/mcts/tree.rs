@@ -66,22 +66,19 @@ impl MctsTree {
     /// # Arguments
     /// * `leaf_idx` - index du nœud à partir duquel on va remonter
     /// * `value` - La valeur de ce nœud
-    /// * `virtual_loss` - La virtual loss qu'il ne faut pas oublier de décrémenter
     ///
     /// # Retour
     ///
-    pub fn backpropagate(&mut self, leaf_idx: usize, mut value: f32, virtual_loss: u32) {
+    pub fn backpropagate(&mut self, leaf_idx: usize, mut value: f32) {
         let mut current_idx = Some(leaf_idx);
 
         while let Some(idx) = current_idx {
             let node = &mut self.nodes[idx];
 
-            // 1. On retire la perte virtuelle (ex: 10)
-            // 2. On ajoute la visite réelle (+1)
-            // Bilan net : -9 si virtual_loss était de 10
-            node.visit_count = node.visit_count.saturating_sub(virtual_loss) + 1;
+            // 1. Mise à jour du compteur de visite
+            node.visit_count += 1;
 
-            // 3. Mise à jour de la valeur
+            // 2. Mise à jour de la valeur
             node.value_sum += value;
 
             // 4. On remonte au parent
@@ -110,7 +107,8 @@ impl MctsTree {
         println!("Nb = {}", nb);
         m
 
-        /*root.children
+        /* TODO: comprendre ce code bizarre alternatif
+        root.children
             .iter()
             .max_by_key(|&(_mv, child_idx)| self.nodes[*child_idx].visit_count)
             .map(|(mv, _child_idx)| mv.clone())
@@ -118,7 +116,7 @@ impl MctsTree {
         }*/
     }
 
-    pub fn choisir_x_meilleurs_coups(&self, x:usize) -> Vec<Move> {
+    pub fn choisir_x_meilleurs_coups(&self, x: usize) -> Vec<Move> {
         let root = &self.nodes[0];
 
         // 1. On extrait les données en allant chercher DIRECTEMENT dans l'Arena via les child_idx

@@ -136,6 +136,7 @@ impl Mcts {
                 while tree.nodes[node_index].is_expanded {
                     path.push(node_index);
                     tree.nodes[node_index].visit_count += self.virtual_loss;
+                    tree.nodes[node_index].value_sum += self.virtual_loss as f32;
 
                     // Si select_child retourne None, ça veut dire que TOUS les enfants
                     // sont "pending" (en attente GPU). Dans ce cas, on ne peut pas descendre.
@@ -151,16 +152,6 @@ impl Mcts {
                     }
                 }
 
-                // Si on a breaké (ou si c'est déjà pending), c'est qu'on est bloqué.
-                if tree.nodes[node_index].is_expanded || tree.nodes[node_index].is_pending {
-                    // On nettoie la trace et on passe au ticket suivant
-                    for &p_node in &path {
-                        tree.nodes[p_node].visit_count -= self.virtual_loss;
-                    }
-                    println!("Branche saturée on envoit le batch partiel");
-                    break;
-                }
-
                 if current_prof > tree.profondeur {
                     tree.profondeur = current_prof;
                     info!("{}n / {}p", tree.nodes.len(), tree.profondeur);
@@ -168,20 +159,23 @@ impl Mcts {
 
                 if !tree.nodes[node_index].is_expanded && !tree.nodes[node_index].is_pending {
                     if board_temp.is_game_over() {
+                        // TODO : A coder la répétition de 3 mais c'est un peu compliqué avec shakmaty
                         let valeur_mat: f32 = 2.0;
                         let gamma: f32 = 0.01;
                         let mut v_game: f32 = 0.0;
 
                         if board_temp.is_checkmate() {
                             v_game = -(valeur_mat - (current_prof as f32 * gamma));
-                            println!("Checkmate {}", v_game);
+                            println!("Checkmate value:{} / profondeur:{}", v_game, current_prof);
                         }
 
+                        // Nettoyage des visites virtuelles
                         for &p_node in &path {
                             tree.nodes[p_node].visit_count -= self.virtual_loss;
+                            tree.nodes[p_node].value_sum -= self.virtual_loss as f32;
                         }
 
-                        tree.backpropagate(node_index, v_game, self.virtual_loss);
+                        tree.backpropagate(node_index, v_game);
                         nb_it += 1;
                     } else {
                         // C'est un vrai nouveau nœud à explorer !
@@ -193,7 +187,9 @@ impl Mcts {
             }
 
             if nodes_exp.len() == 0 {
-                // Si tout est en attente (pending) et qu'on n'a rien trouvé, on sort
+                if nb_it==0 {
+                    break;
+                }
                 continue;
             }
 
@@ -252,14 +248,17 @@ impl Mcts {
                     mask_slice.try_into().expect("Taille de masque invalide");
 
                 let value = self.shared_interface.get_value(i as usize);
-                self.shared_interface
-                    .fill_sorted_moves(i as usize, mask_array, &mut self.move_buffer);
+                self.shared_interface.fill_sorted_moves(
+                    i as usize,
+                    mask_array,
+                    &mut self.move_buffer,
+                );
                 tree.expand_node(
                     nodes_exp[i as usize],
                     &self.move_buffer,
                     &board_exp[i as usize],
                 );
-                tree.backpropagate(nodes_exp[i as usize], value, self.virtual_loss);
+                tree.backpropagate(nodes_exp[i as usize], value);
                 nb_it += 1;
             }
             self.shared_interface.reset_flag_prediction();

@@ -55,7 +55,7 @@ fn main() {
         .expect("tonku"); // -M4 facile à trouver Bh3-f1+*/
     let mut new_board: Chess = fen.into_position(CastlingMode::Standard).expect("tonku");
     // let mut new_board = Chess::new();
-    mcts.search_batch(&mut new_tree, &mut new_board, 200000)
+    mcts.search_batch(&mut new_tree, &mut new_board, 20000)
         .expect("Ton ku");
     println!(
         "Meilleur coup = {}",
