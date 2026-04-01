@@ -18,6 +18,7 @@ pub struct Node {
 impl Node {
     /// Crée un nouveau nœud (similaire au __init__ Python)
     pub fn new(parent: Option<usize>, prior_p: f32) -> Self {
+        println!("Création d'un nouveau noeud avec prior_p = {:.4}", prior_p);
         Self {
             parent,
             children: Vec::new(),

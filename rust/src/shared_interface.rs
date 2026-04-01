@@ -78,6 +78,20 @@ impl SharedInterface {
             std::slice::from_raw_parts(offset_ptr, 4672) // Accès direct à la SHM
         };
 
+        let mut cpt_mv = 0;
+        let mut prob_tot = 0.0;
+        for i in 0..4672 {
+            if raw_policy[i] > 0.0 {
+                println!("fill_sorted_moves {} : {}", i, raw_policy[i]);
+                cpt_mv += 1;
+                prob_tot += raw_policy[i];
+            }
+        }
+        println!(
+            "{} coups possible, avec probabilité totale de {}",
+            cpt_mv, prob_tot
+        );
+
         // On vide le vecteur sans désallouer sa mémoire
         output.clear();
 

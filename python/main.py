@@ -97,12 +97,19 @@ def main():
             # On transforme les octets (584) en bits (4672) pour tout le batch d'un coup
             # 'big' ou 'little' à tester selon ton remplissage Rust
             mask = np.unpackbits(
-                input_legaux[:current_batch_size], axis=1, bitorder="big"
+                input_legaux[:current_batch_size], axis=1, bitorder="little"
             )
+            for i in range(mask.shape[0]):
+                print(f"Batch {i}: ", end="")
+                for bit in mask[i]:
+                    print(bit, end="")
 
+            print("\n")
             # On applique le masque : les coups illégaux deviennent 0.0
             # predictions['policy'] est (batch, 4672)
             filtered_policy = predictions["policy"][:current_batch_size] * mask
+            for i in range(0, 20):
+                print(f"{i} : Prob {filtered_policy[0][i]:.4f}")
 
             # Re-normalisation (Softmax après filtrage)
             # On ajoute une infime valeur (1e-10) pour éviter la division par zéro
@@ -112,6 +119,17 @@ def main():
             # 6. On recopie les résultats dans la mémoire partagée pour Rust
             # On utilise [:] pour modifier le contenu du segment sans casser la vue
             interface.policy[:current_batch_size] = final_policy
+            print(f"Current_batch_size = {current_batch_size}")
+            for i in range(0, current_batch_size):
+                cpt_mv = 0
+                proba_tot = 0.0
+                for j in range(0, 4672):
+                    if final_policy[i][j] > 0.0:
+                        cpt_mv += 1
+                        proba_tot += final_policy[i][j]
+                        print(f"{j}: policy_python {final_policy[i][j]}")
+                print(f"{cpt_mv} coups possibles, probabilité totale de {proba_tot}")
+
             interface.value[:current_batch_size] = predictions["value"][
                 :current_batch_size
             ].flatten()
