@@ -64,7 +64,7 @@ impl Mcts {
         let max_batch = 512;
         let mut nb_it = 1;
         // Pour stocker les noeuds en cours d'expension
-        let mut nodes_exp: Vec<usize> = Vec::with_capacity(max_batch as usize);
+        let mut nodes_exp: Vec<(usize, Vec<usize>)> = Vec::with_capacity(max_batch as usize);
         // Pour stocker les boards des noeuds en cours d'expension
         let mut board_exp: Vec<Chess> = Vec::with_capacity(max_batch as usize);
 
@@ -148,6 +148,10 @@ impl Mcts {
                         node_index = idx_node;
                     } else {
                         // Tous les enfants de cette branche sont occupés. On casse la boucle pour abandonner.
+                        for &p_node in &path {
+                            tree.nodes[p_node].visit_count -= self.virtual_loss;
+                            tree.nodes[p_node].value_sum -= self.virtual_loss as f32;
+                        }
                         break;
                     }
                 }
@@ -180,14 +184,22 @@ impl Mcts {
                     } else {
                         // C'est un vrai nouveau nœud à explorer !
                         tree.nodes[node_index].is_pending = true;
-                        nodes_exp.push(node_index);
+                        nodes_exp.push((node_index, path));
                         board_exp.push(board_temp);
+                    }
+                } else {
+                    if !tree.nodes[node_index].is_expanded && tree.nodes[node_index].is_pending {
+                        // Nettoyage des visites virtuelles
+                        for &p_node in &path {
+                            tree.nodes[p_node].visit_count -= self.virtual_loss;
+                            tree.nodes[p_node].value_sum -= self.virtual_loss as f32;
+                        }
                     }
                 }
             }
 
             if nodes_exp.len() == 0 {
-                if nb_it==0 {
+                if nb_it == 0 {
                     break;
                 }
                 continue;
@@ -247,18 +259,22 @@ impl Mcts {
                 let mask_array: &[u8; 584] =
                     mask_slice.try_into().expect("Taille de masque invalide");
 
+                // On récupère l'ID du noeud et son chemin
+                let (node_idx, path_list) = &nodes_exp[i_usize];
+
+                for &p_node in path_list {
+                    tree.nodes[p_node].visit_count -= self.virtual_loss;
+                    tree.nodes[p_node].value_sum -= self.virtual_loss as f32;
+                }
+
                 let value = self.shared_interface.get_value(i as usize);
                 self.shared_interface.fill_sorted_moves(
                     i as usize,
                     mask_array,
                     &mut self.move_buffer,
                 );
-                tree.expand_node(
-                    nodes_exp[i as usize],
-                    &self.move_buffer,
-                    &board_exp[i as usize],
-                );
-                tree.backpropagate(nodes_exp[i as usize], value);
+                tree.expand_node(*node_idx, &self.move_buffer, &board_exp[i as usize]);
+                tree.backpropagate(*node_idx, value);
                 nb_it += 1;
             }
             self.shared_interface.reset_flag_prediction();

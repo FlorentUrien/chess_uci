@@ -120,18 +120,19 @@ impl MctsTree {
         let root = &self.nodes[0];
 
         // 1. On extrait les données en allant chercher DIRECTEMENT dans l'Arena via les child_idx
-        let mut coups_stats: Vec<(&Move, u32, f32)> = root
+        let mut coups_stats: Vec<(&Move, u32, f32, f32)> = root
             .children
             .iter()
             .map(|(mv, child_idx)| {
                 let enfant = &self.nodes[*child_idx]; // On va chercher le noeud enfant dans l'Arena
                 let n = enfant.visit_count;
+                let p = enfant.prior_p;
                 let v = if n > 0 {
                     enfant.value_sum / n as f32
                 } else {
                     0.0
                 };
-                (mv, n, v)
+                (mv, n, v, p)
             })
             .collect();
 
@@ -140,13 +141,14 @@ impl MctsTree {
 
         // 3. Affichage pour debug
         println!("\n--- TOP x DES COUPS RÉELLEMENT EXPLORÉS ---");
-        for (i, (mv, n, v)) in coups_stats.iter().take(x).enumerate() {
+        for (i, (mv, n, v, p)) in coups_stats.iter().take(x).enumerate() {
             println!(
-                "{}. Coup: {:<6} | Visites: {:<8} | Score moy: {:.4}",
+                "{}. Coup: {:<6} | Visites: {:<8} | Score moy: {:.4} | Prior P: {:.4}",
                 i + 1,
                 mv.to_string(),
                 n,
-                v
+                v,
+                p
             );
         }
         println!("--------------------------------\n");
@@ -154,7 +156,7 @@ impl MctsTree {
         coups_stats
             .into_iter()
             .take(5)
-            .map(|(m, _, _)| m.clone())
+            .map(|(m, _, _, _)| m.clone())
             .collect()
     }
 
