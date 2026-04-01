@@ -99,17 +99,9 @@ def main():
             mask = np.unpackbits(
                 input_legaux[:current_batch_size], axis=1, bitorder="little"
             )
-            for i in range(mask.shape[0]):
-                print(f"Batch {i}: ", end="")
-                for bit in mask[i]:
-                    print(bit, end="")
-
-            print("\n")
             # On applique le masque : les coups illégaux deviennent 0.0
             # predictions['policy'] est (batch, 4672)
             filtered_policy = predictions["policy"][:current_batch_size] * mask
-            for i in range(0, 20):
-                print(f"{i} : Prob {filtered_policy[0][i]:.4f}")
 
             # Re-normalisation (Softmax après filtrage)
             # On ajoute une infime valeur (1e-10) pour éviter la division par zéro
@@ -127,8 +119,6 @@ def main():
                     if final_policy[i][j] > 0.0:
                         cpt_mv += 1
                         proba_tot += final_policy[i][j]
-                        print(f"{j}: policy_python {final_policy[i][j]}")
-                print(f"{cpt_mv} coups possibles, probabilité totale de {proba_tot}")
 
             interface.value[:current_batch_size] = predictions["value"][
                 :current_batch_size

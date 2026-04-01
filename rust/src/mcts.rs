@@ -100,9 +100,6 @@ impl Mcts {
                 .fill_sorted_moves(0, &legaux, &mut self.move_buffer);
             self.shared_interface.reset_flag_prediction();
 
-            for i in 0..self.move_buffer.len(){
-                println!("Rust recoit {}: {} / {}", i+1, self.move_buffer[i].0, self.move_buffer[i].1);
-            }
             // J'ai les mouvements légaux classés par ordre de probabilité décroissante dans move_buffer
             tree.expand_node(0, &self.move_buffer, board);
             tree.profondeur = 1;

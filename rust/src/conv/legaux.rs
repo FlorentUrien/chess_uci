@@ -11,14 +11,11 @@ pub fn coups_legaux(pos: &Chess) -> [u8; 584] {
 
         // Magie : real_to_ia(m: &UciMove, ...) devrait maintenant accepter &uci_move directement
         if let Ok(Some(idx)) = real_to_ia(&uci_move, is_white) {
-            println!("coups_legaux : {} / {}", idx, uci_move);
             if idx < 4672 {
                 legal_mask[idx / 8] |= 1 << (idx % 8);
             }
         }
     }
-
-    println!("{} / {:08b}", legal_mask[0], legal_mask[0]);
     legal_mask
 }
 

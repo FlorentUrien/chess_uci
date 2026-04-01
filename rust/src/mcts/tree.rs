@@ -40,7 +40,6 @@ impl MctsTree {
 
             // 3. Création du nouveau nœud
             let new_child = Node::new(Some(parent_idx), proba);
-            println!("Mv = {} | Proba = {:.4}", mv, proba);
 
             // 4. On l'ajoute à l'Arena
             self.nodes.push(new_child);
@@ -105,7 +104,6 @@ impl MctsTree {
                 m = Some(n.0.clone());
             }
         }
-        println!("Nb = {}", nb);
         m
 
         /* TODO: comprendre ce code bizarre alternatif
