@@ -111,15 +111,6 @@ def main():
             # 6. On recopie les résultats dans la mémoire partagée pour Rust
             # On utilise [:] pour modifier le contenu du segment sans casser la vue
             interface.policy[:current_batch_size] = final_policy
-            print(f"Current_batch_size = {current_batch_size}")
-            for i in range(0, current_batch_size):
-                cpt_mv = 0
-                proba_tot = 0.0
-                for j in range(0, 4672):
-                    if final_policy[i][j] > 0.0:
-                        cpt_mv += 1
-                        proba_tot += final_policy[i][j]
-
             interface.value[:current_batch_size] = predictions["value"][
                 :current_batch_size
             ].flatten()
