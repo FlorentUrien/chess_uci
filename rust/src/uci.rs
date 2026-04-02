@@ -2,8 +2,11 @@ use shakmaty::uci::UciMove;
 use shakmaty::{Chess, Position};
 use std::io::{self, Write};
 use std::str::FromStr;
+use std::sync::Arc;
 
 use crate::mcts::Mcts;
+use crate::mcts::node::Node;
+use crate::mcts::tree::MctsTree;
 use crate::shared_interface::SharedInterface;
 
 pub struct Uci {
@@ -16,11 +19,11 @@ pub struct Uci {
     poids_echecs: f32,
     no_model: u8,
     reset: bool,
-    pos: Chess,
+    board: Chess,
     force_to_play: bool,
     your_turn: bool,
-    shared_mem: SharedInterface,
-    mcts: Option<Mcts>,
+    mcts: Mcts,
+    tree: MctsTree,
 }
 
 impl Uci {
@@ -36,11 +39,11 @@ impl Uci {
             poids_echecs: 0.1,
             no_model: 0,
             reset: true,
-            pos: Chess::default(),
+            board: Chess::default(),
             force_to_play: false,
             your_turn: false,
-            shared_mem: shared_mem,
-            mcts: None,
+            mcts: Mcts::new(2.0, 10, shared_mem),
+            tree: MctsTree::new(Node::new(None, 1.0)),
         }
     }
 
@@ -68,7 +71,7 @@ impl Uci {
         if ligne.contains("fen") {}
         // 1. On réinitialise si c'est startpos
         if ligne.contains("startpos") {
-            self.pos = Chess::default();
+            self.board = Chess::default();
         }
 
         // 2. On traite les coups (moves)
@@ -80,15 +83,15 @@ impl Uci {
                 // Traduction de chess.Move.from_uci(move)
                 if let Ok(uci_move) = UciMove::from_str(m_str) {
                     // On convertit en coup légal et on joue
-                    if let Ok(m) = uci_move.to_move(&self.pos) {
-                        self.pos.play_unchecked(m); // board.push(move)
+                    if let Ok(m) = uci_move.to_move(&self.board) {
+                        self.board.play_unchecked(m); // board.push(move)
                     }
                 }
             }
         }
 
         // Calcul du numéro de coup (n // 2)
-        let num_coup = self.pos.fullmoves().get();
+        let num_coup = self.board.fullmoves().get();
         println!("info string Position mise à jour, coup n°{}", num_coup);
     }
 
@@ -118,12 +121,12 @@ impl Uci {
             }
             // Pour annoncer que le réseau de neurones est initialisé
             "isready" => {
-                self.shared_mem.write_no_model(self.no_model);
+                self.mcts.write_no_model(self.no_model);
                 println!("readyok");
                 io::stdout().flush().unwrap(); // VITAL pour Cutechess
             }
             "ucinewgame" => {
-                self.pos = Chess::default();
+                self.board = Chess::default();
                 self.reset = true;
                 // TODO : Brancher le MTCS
             }

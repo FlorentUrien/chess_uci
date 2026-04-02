@@ -292,6 +292,14 @@ impl Mcts {
         );
         Ok(())
     }
+
+    ///Pour écrire le numéro du modèle dans la shared mem
+    ///
+    /// # Arguments
+    /// * `no_model` - Le numéro du modèle à charger
+    pub fn write_no_model(&mut self, no_model: u8) {
+        self.shared_interface.write_no_model(no_model);
+    }
 }
 
 /*

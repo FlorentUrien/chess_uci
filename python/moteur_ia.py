@@ -11,7 +11,6 @@ def charger_modele(model_path: str) -> ONNXPredictor:
     :return: Le modèle chargé
     """
     print(f"info string Chargement du Modèle {model_path}", flush=True)
-    sys.stdout.flush()  # Indispensable pour l'envoi immédiat
 
     try:
         model = ONNXPredictor(model_path + ".onnx")

@@ -45,7 +45,7 @@ def main():
     # 2. Il va falloir choisir le bon modèle ONNX à ouvrir
     no_model = interface.wait_for_no_model()
 
-    print("Python <- Rust (Je connecte mon model n° {no_model})")
+    print(f"info string Python <- Rust (Je connecte mon model n° {no_model})")
 
     if no_model == 1:
         path_model = os.path.join(
