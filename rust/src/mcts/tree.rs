@@ -1,6 +1,8 @@
 use super::node::Node;
 use crate::conv::from_ia::ia_to_real;
 use shakmaty::{Chess, Move};
+use std::fs::File;
+use std::io::Write;
 
 pub struct MctsTree {
     pub nodes: Vec<Node>,
@@ -213,5 +215,85 @@ impl MctsTree {
             let mv_str = format!("{}", mv);
             self.affiche_noeud_sonnet(*child_idx, depth + 1, Some(&mv_str));
         }
+    }
+
+    pub fn export_dot_pro(&self, min_visits: u32) -> String {
+        let mut dot = String::from(
+            "digraph MCTS {\n  rankdir=LR;\n  node [shape=box, fontname=\"Arial\", style=filled];\n",
+        );
+
+        for (i, node) in self.nodes.iter().enumerate() {
+            if node.visit_count >= min_visits {
+                // Correction : pas de virgule traînante quand style est vide
+                let fillcolor = if i == 0 {
+                    "#d4edda".to_string()
+                } else if node.value() > 0.0 {
+                    "#cce5ff".to_string() // bleu clair = bon pour nous
+                } else {
+                    "#f8d7da".to_string() // rouge clair = mauvais
+                };
+
+                // Correction : pas de virgule dans le label (remplacée par espace)
+                let label = format!("N{} V:{} Q:{:.2}", i, node.visit_count, node.value());
+
+                dot.push_str(&format!(
+                    "  {} [label=\"{}\", fillcolor=\"{}\"];\n",
+                    i, label, fillcolor
+                ));
+
+                for (mv, child_idx) in &node.children {
+                    if let Some(child_node) = self.nodes.get(*child_idx) {
+                        if child_node.visit_count >= min_visits {
+                            let ratio = child_node.visit_count as f32 / node.visit_count as f32;
+                            let pen_width = (ratio * 5.0).max(0.5);
+
+                            // Correction : les caractères spéciaux dans les labels d'arêtes
+                            // doivent être entre guillemets (déjà le cas) mais sans virgule
+                            dot.push_str(&format!(
+                                "  {} -> {} [label=\"{}\" penwidth={:.1}];\n",
+                                i, child_idx, mv, pen_width
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        dot.push_str("}\n");
+        dot
+    }
+
+    /// Pour obtenir une représentation graphique de l'arbre à l'aide par exemple de https://edotor.net/
+    pub fn save_dot_to_file(&self, min_visits: u32, filename: &str) -> std::io::Result<()> {
+        let content = self.export_dot_pro(min_visits);
+        let mut file = File::create(filename)?;
+        file.write_all(content.as_bytes())?;
+        println!("Arbre sauvegardé dans : {}", filename);
+        Ok(())
+    }
+
+    pub fn save_and_render(&self, min_visits: u32, filename: &str) -> std::io::Result<()> {
+        // 1. Sauvegarde le .dot
+        self.save_dot_to_file(min_visits, filename)?;
+
+        // 2. Appelle graphviz pour générer un SVG
+        let svg_name = filename.replace(".dot", ".svg");
+        let output = std::process::Command::new("dot")
+            .args(["-Tsvg", filename, "-o", &svg_name])
+            .output();
+
+        match output {
+            Ok(o) if o.status.success() => {
+                println!("SVG généré : {}", svg_name);
+                // 3. Ouvre dans le navigateur
+                std::process::Command::new("xdg-open")
+                    .arg(&svg_name)
+                    .spawn()
+                    .ok();
+            }
+            Ok(o) => eprintln!("Erreur dot : {}", String::from_utf8_lossy(&o.stderr)),
+            Err(_) => eprintln!("graphviz non installé — sudo dnf install graphviz"),
+        }
+        Ok(())
     }
 }
