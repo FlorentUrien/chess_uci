@@ -1,5 +1,5 @@
 use shakmaty::uci::UciMove;
-use shakmaty::{Chess, Position};
+use shakmaty::{CastlingMode, Chess, Position};
 use std::io::{self, Write};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -210,9 +210,31 @@ impl Uci {
                 }
                 // C'est à son tour de jouer
                 if ligne.starts_with("go") {
-                    // TODO : Traiter nodes xxxx
-                    self.your_turn = true;
+    // TODO : Traiter les paramètres (movetime, nodes, infinite, etc.)
+    self.your_turn = true;
+
+    // On repart d'un arbre neuf pour la position courante
+    self.tree = MctsTree::new(Node::new(None, 1.0));
+
+    match self.mcts.search_batch(&mut self.tree, &mut self.board, self.simulations) {
+        Ok(()) => {
+            match self.tree.choisir_meilleur_coup() {
+                Some(best_move) => {
+                    let uci_str = best_move.to_uci(CastlingMode::Standard).to_string();
+                    println!("bestmove {}", uci_str);
                 }
+                None => println!("bestmove 0000"),
+            }
+        }
+        Err(e) => {
+            eprintln!("info string Erreur MCTS : {}", e);
+            println!("bestmove 0000");
+        }
+    }
+    io::stdout().flush().unwrap();
+
+    self.reset_your_turn();
+}               
             }
         } // Fermeture de la session     
         ret

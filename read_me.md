@@ -62,6 +62,83 @@ info string Position mise à jour, coup n°1`
 
 Puis on lui demande de calculer son coup.
 
+`go movetime 2000
+<- go movetime 2000
+Rust -> Python (connecte ton model n°1)
+Numéro du modèle lu 1
+info string Python <- Rust (Je connecte mon model n° 1)
+info string Chargement du Modèle /home/florent/Rust/chess_uci/python/models/RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights
+Chargement de l'accélérateur ONNX : /home/florent/Rust/chess_uci/python/models/RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights.onnx
+Rust -> demande de prédiction à Python
+Python <- Rust (Demande de prédiction)
+Python: <- 1 tensors reçus
+Python: <- 1 coups légaux reçus
+rootRust : prédictions reçues
+Profondeur : 1  |  Nœuds : 21
+Python <- Rust (Demande de prédiction)
+Python: <- 20 tensors reçus
+Python: <- 20 coups légaux reçus
+Rust : 20 prédictions reçues
+Profondeur : 1  |  Nœuds : 421
+Python <- Rust (Demande de prédiction)
+Python: <- 39 tensors reçus
+Python: <- 39 coups légaux reçus
+Rust : 39 prédictions reçues
+Profondeur : 2  |  Nœuds : 1435
+Python <- Rust (Demande de prédiction)
+Python: <- 64 tensors reçus
+Python: <- 64 coups légaux reçus
+info string Le chargement du Modèle /home/florent/Rust/chess_uci/python/models/RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights a réussi
+Rust : 64 prédictions reçues
+Profondeur : 3  |  Nœuds : 3073
+Python <- Rust (Demande de prédiction)
+Python <- Rust (Demande de prédiction)
+Python: <- 64 tensors reçus
+Python: <- 64 coups légaux reçus
+Python: <- 64 tensors reçus
+Python: <- 64 coups légaux reçus
+Rust : 64 prédictions reçues
+Profondeur : 4  |  Nœuds : 4960
+Python <- Rust (Demande de prédiction)
+Python: <- 64 tensors reçus
+Python: <- 64 coups légaux reçus
+Rust : 64 prédictions reçues
+Profondeur : 5  |  Nœuds : 6792
+Python <- Rust (Demande de prédiction)
+Python: <- 64 tensors reçus
+Python: <- 64 coups légaux reçus
+Rust : 64 prédictions reçues
+Profondeur : 6  |  Nœuds : 8704
+Python <- Rust (Demande de prédiction)
+Python: <- 128 tensors reçus
+Python: <- 128 coups légaux reçus
+Rust : 128 prédictions reçues
+Profondeur : 7  |  Nœuds : 12251
+Python <- Rust (Demande de prédiction)
+Python: <- 128 tensors reçus
+Python: <- 128 coups légaux reçus
+Rust : 64 prédictions reçues
+Profondeur : 8  |  Nœuds : 14216
+Python <- Rust (Demande de prédiction)
+Python: <- 128 tensors reçus
+Python: <- 128 coups légaux reçus
+Rust : 128 prédictions reçues
+Profondeur : 8  |  Nœuds : 18023
+Python <- Rust (Demande de prédiction)
+Python: <- 128 tensors reçus
+Python: <- 128 coups légaux reçus
+Rust : 128 prédictions reçues
+Profondeur : 9  |  Nœuds : 21911
+Python <- Rust (Demande de prédiction)
+Python: <- 128 tensors reçus
+Python: <- 128 coups légaux reçus
+Rust : 128 prédictions reçues
+Profondeur : 10  |  Nœuds : 25659
+Total : 3.136108827s, Python: 3.115382466s, Rust: 20.726361ms
+bestmove e2e4`
+
+
+
 
 
 # Le coordinateur (Cutechess)
