@@ -20,7 +20,7 @@ On génèrera le fichier de debug <mark>/engine_debug.log</mark>.
 
 On lance le moteur : 
 
-`((.venv) ) florent@flo-fixe:~/Rust/chess_uci/python$ source start.sh`
+`((.venv) ) florent@flo-fixe:~/Rust/chess_uci$ source start.sh`
 
 On attend qu'il charche le réseau de neurones et qu'il soit prêt.
 
