@@ -68,9 +68,6 @@ impl Mcts {
         // Pour stocker les boards des noeuds en cours d'expension
         let mut board_exp: Vec<Chess> = Vec::with_capacity(max_batch as usize);
 
-        println!("Rust -> Python (connecte ton model n°1)");
-        self.shared_interface.write_no_model(1);
-
         unsafe {
             sleep(5);
         }

@@ -177,6 +177,59 @@ Dans cet exemple on a un réseau Resnet, 6 têtes, appris sur 24 millions de pos
 
 C'est le lanceur de la partie Python (*création de la shared memory et chargement du réseau de neurones*). Ensuite elle organise la communication entre Rust et Python.
 
+# La partie Rust
+
+## main.rs
+
+On crée la mémoire partagée (*avec Python*), le canal de communication, et l'on écoute <mark>stdin</mark> sur un thread séparé (*qui communique via le canal précédent*) et dans le thread principal on lit ce canal.
+
+## uci.rs
+
+Dans cette partie on gère la communication <mark>uci</mark>.
+
+Détaillons les commandes.
+
+### "uci"
+
+La <mark>poignée de main</mark> pour présenter le moteur et ses options.
+
+`println!("id name Florent_IA");`
+
+`println!("option name Simulations type spin default 800 min 100 max 100000");`
+
+`println!("option name PUCT_x10 type spin default 30 min 10 max 50");`
+
+`println!("option name Temperature_x10 type spin default 20 min 1 max 100");`
+
+`println!("option name Limite_stochastique type spin default 5 min 1 max 20");`
+
+`println!("option name Poids_material_x10 type spin default 1 min 0 max 10");`
+
+`println!("option name Poids_echecs_x10 type spin default 1 min 0 max 10");`
+
+`println!("option name Numero_model type spin default 1 min 1 max 10");`
+
+`println!("uciok");`
+
+### "setoption"
+
+Pour entrer les valeurs des différentes options.
+<mark>**A noter que l'option qui permet de changer le réseau de neurones est pour l'instant inactive, car codée en dur dans la partie Python à 1.**</mark>
+
+### "isready"
+
+Pour indiquer que le moteur est prêt. 
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## 

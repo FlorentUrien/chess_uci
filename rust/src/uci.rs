@@ -2,7 +2,6 @@ use shakmaty::uci::UciMove;
 use shakmaty::{CastlingMode, Chess, Position};
 use std::io::{self, Write};
 use std::str::FromStr;
-use std::sync::Arc;
 
 use crate::mcts::Mcts;
 use crate::mcts::node::Node;
@@ -108,6 +107,10 @@ impl Uci {
         match ligne.trim() {
             // Poignée de main initiale, présentation des options configurables
             "uci" => {
+                self.no_model = 1;
+                self.mcts.write_no_model(self.no_model);
+                println!("Rust -> Python (connecte ton model n° {})", self.no_model);
+
                 println!("id name Florent_IA");
                 println!("option name Simulations type spin default 800 min 100 max 100000");
                 println!("option name PUCT_x10 type spin default 30 min 10 max 50");
@@ -117,11 +120,11 @@ impl Uci {
                 println!("option name Poids_echecs_x10 type spin default 1 min 0 max 10");
                 println!("option name Numero_model type spin default 1 min 1 max 10");
                 println!("uciok");
+
                 io::stdout().flush().unwrap();
             }
             // Pour annoncer que le réseau de neurones est initialisé
             "isready" => {
-                self.mcts.write_no_model(self.no_model);
                 println!("readyok");
                 io::stdout().flush().unwrap(); // VITAL pour Cutechess
             }
@@ -193,6 +196,12 @@ impl Uci {
                                 "Numero_model" => {
                                     if let Ok(v) = value.parse::<u8>() {
                                         self.no_model = v;
+                                        self.mcts.write_no_model(self.no_model);
+                                        println!(
+                                            "Rust -> Python (connecte ton model n° {})",
+                                            self.no_model
+                                        );
+                                        //TODO: Actuellement le modèle 1 est chargé en dur dans le code Python
                                     }
                                 }
                                 _ => println!("info string Option inconnue : {}", name),
@@ -210,31 +219,32 @@ impl Uci {
                 }
                 // C'est à son tour de jouer
                 if ligne.starts_with("go") {
-    // TODO : Traiter les paramètres (movetime, nodes, infinite, etc.)
-    self.your_turn = true;
+                    // TODO : Traiter les paramètres (movetime, nodes, infinite, etc.)
+                    self.your_turn = true;
 
-    // On repart d'un arbre neuf pour la position courante
-    self.tree = MctsTree::new(Node::new(None, 1.0));
+                    // On repart d'un arbre neuf pour la position courante
+                    self.tree = MctsTree::new(Node::new(None, 1.0));
 
-    match self.mcts.search_batch(&mut self.tree, &mut self.board, self.simulations) {
-        Ok(()) => {
-            match self.tree.choisir_meilleur_coup() {
-                Some(best_move) => {
-                    let uci_str = best_move.to_uci(CastlingMode::Standard).to_string();
-                    println!("bestmove {}", uci_str);
+                    match self
+                        .mcts
+                        .search_batch(&mut self.tree, &mut self.board, self.simulations)
+                    {
+                        Ok(()) => match self.tree.choisir_meilleur_coup() {
+                            Some(best_move) => {
+                                let uci_str = best_move.to_uci(CastlingMode::Standard).to_string();
+                                println!("bestmove {}", uci_str);
+                            }
+                            None => println!("bestmove 0000"),
+                        },
+                        Err(e) => {
+                            eprintln!("info string Erreur MCTS : {}", e);
+                            println!("bestmove 0000");
+                        }
+                    }
+                    io::stdout().flush().unwrap();
+
+                    self.reset_your_turn();
                 }
-                None => println!("bestmove 0000"),
-            }
-        }
-        Err(e) => {
-            eprintln!("info string Erreur MCTS : {}", e);
-            println!("bestmove 0000");
-        }
-    }
-    io::stdout().flush().unwrap();
-
-    self.reset_your_turn();
-}               
             }
         } // Fermeture de la session     
         ret
