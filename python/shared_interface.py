@@ -152,6 +152,10 @@ class SharedInterface:
 
         return ret
 
+    def etat_model(self, etat: int):
+        """0: attente, 1: ok, 2: pb"""
+        self.sync[1] = etat
+
     def free_rust(self):
         """On a lu les données de rust, on libère la sm"""
         self.sync[1] = 0

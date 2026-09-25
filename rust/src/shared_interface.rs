@@ -110,6 +110,19 @@ impl SharedInterface {
         }
     }
 
+    /// Vérifier si Python a réussi à charger le réseau
+    ///
+    /// # Retour
+    ///     =0 : pas fini
+    ///     =1 : ok
+    ///     =2 : pb
+    pub fn nn_state(&self) -> u16 {
+        unsafe {
+            let ptr = self.shm_sync.as_ptr() as *const u16;
+            std::ptr::read_volatile(ptr)
+        }
+    }
+
     /// Ecris les tenseurs à passer à l'IA
     ///
     /// # Arguments

@@ -41,6 +41,7 @@ def main():
     # 1. On initialise l'interface (c'est Python qui 'create=True' les segments)
     # Assure-toi que le batch_size correspond à celui de ton code Rust
     interface = SharedInterface(batch_size=512, create=True)
+    interface.no_model(0)
 
     # 2. Il va falloir choisir le bon modèle ONNX à ouvrir
     no_model = interface.wait_for_no_model()
@@ -59,6 +60,10 @@ def main():
             "RN_T6_24012.1_20_best_chess_model_ep45_mae_0.1043_pol_0.4933.weights",
         )
         modele = charger_modele(path_model)
+        if modele != None:
+            interface.no_model(1)
+        else:
+            interface.no_model(2)
 
     try:
         cpt = 0
