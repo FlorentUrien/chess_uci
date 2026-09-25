@@ -1,8 +1,11 @@
 #!/bin/bash
 rm /dev/shm/psm_* 2>/dev/null || true
 
-# On se place au bon endroit
-cd "$(dirname "$0")/.."
+# Récupère le dossier parent du dossier où se trouve le script (donc la racine chess_uci)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
 
 # On définit le fichier de log une seule fois
 LOG_FILE="engine_debug.log"
