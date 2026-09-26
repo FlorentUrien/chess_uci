@@ -118,7 +118,6 @@ impl Uci {
                 println!("option name Limite_stochastique type spin default 5 min 1 max 20");
                 println!("option name Poids_material_x10 type spin default 1 min 0 max 10");
                 println!("option name Poids_echecs_x10 type spin default 1 min 0 max 10");
-                println!("option name Numero_model type spin default 1 min 1 max 10");
                 println!("uciok");
 
                 io::stdout().flush().unwrap();
@@ -191,17 +190,6 @@ impl Uci {
                                 "Poids_echecs_x10" => {
                                     if let Ok(v) = value.parse::<f32>() {
                                         self.poids_echecs = v / 10.0;
-                                    }
-                                }
-                                "Numero_model" => {
-                                    if let Ok(v) = value.parse::<u8>() {
-                                        self.no_model = v;
-                                        self.mcts.write_no_model(self.no_model);
-                                        println!(
-                                            "Rust -> Python (connecte ton model n° {})",
-                                            self.no_model
-                                        );
-                                        //TODO: Actuellement le modèle 1 est chargé en dur dans le code Python
                                     }
                                 }
                                 _ => println!("info string Option inconnue : {}", name),
