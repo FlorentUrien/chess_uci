@@ -10,6 +10,77 @@ Comme 2 langages différents sont utilisés, l'éditeur ne sera pas **Pycharm** 
 
 Ces deux parties distinctes communiquent via une <mark>shared memory</mark>.
 
+Le programme est conçu principalement pour tourner sous <mark>Fedora sur mon ordinateur fixe avec sa radeon 6650XT</mark>. Néanmoins il peut être pratique de pouvoir travailler dessus à partir de <mark>mon ordinateur portable sous W11</mark>.
+
+Dans les deux cas il sera intéressant d'inspecter le fichier <mark>engine_debug.log</mark> pour analyser le fonctionnement.
+
+# Adaptation pour tourner sur le portable sous W11
+
+J'ai installé <mark>wsl</mark>.
+
+Puis cela se lance sous <mark>Visual code</mark>.
+
+Pour lancer le venv Python il faut tapper la commande :
+
+`source ~/.venvs/chess_env/bin/activate`
+
+On a alors :
+
+`(chess_env) furie@PortableFlo:/mnt/c/Users/furie/Dev/chess_uci$ pip list
+Package                Version`
+
+---------------------- ---------
+
+`cuda-bindings          13.4.3
+cuda-pathfinder        1.8.2
+cuda-toolkit           13.0.3.0
+filelock               4.0.3
+fsspec                 2026.9.0
+Jinja2                 3.1.6
+MarkupSafe             3.0.3
+ml_dtypes              0.6.0
+mpmath                 1.3.0
+networkx               3.7
+numpy                  2.5.3
+nvidia-cublas          13.1.1.3
+nvidia-cuda-cupti      13.0.85
+nvidia-cuda-nvrtc      13.0.88
+nvidia-cuda-runtime    13.0.96
+nvidia-cudnn-cu13      9.24.0.43
+nvidia-cufft           12.0.0.61
+nvidia-cufile          1.15.1.6
+nvidia-curand          10.4.0.35
+nvidia-cusolver        12.0.4.66
+nvidia-cusparse        12.6.3.3
+nvidia-cusparselt-cu13 0.8.1
+nvidia-nccl-cu13       2.30.7
+nvidia-nvjitlink       13.4.92
+nvidia-nvshmem-cu13    3.4.5
+nvidia-nvtx            13.0.85
+onnx                   1.23.0
+onnx2torch             1.5.15
+pillow                 12.3.0
+pip                    25.1.1
+protobuf               7.36.2
+setuptools             84.0.0
+sympy                  1.14.0
+torch                  2.14.0
+torchvision            0.29.0
+triton                 3.8.0
+typing_extensions      4.16.0`
+
+Et l'on peut lancer la partie python pour test avec la commande :
+
+![](./images/2026-09-26-16-43-20-image.png)
+
+Pour lancer tout il faudra utiliser la commande :
+
+`source start_clean.sh`
+
+
+
+![](C:/Users/furie/Dev/chess_uci/images/2026-09-26-16-54-56-image.png)
+
 # Le lanceur des parties Python et Rust
 
 C'est le batch <mark>/python/start.sh</mark>.
@@ -137,10 +208,6 @@ Profondeur : 10  |  Nœuds : 25659
 Total : 3.136108827s, Python: 3.115382466s, Rust: 20.726361ms
 bestmove e2e4`
 
-
-
-
-
 # Le coordinateur (Cutechess)
 
 Il faut l'installer, ce qui n'est pas passionnant sous Fedora.
@@ -158,8 +225,6 @@ Et enfin on peut le lancer via :
 Joie, on a enfin un affichage graphique:
 
 ![](images/2026-09-25-09-31-18-image.png)
-
-
 
 # La partie Python
 
@@ -219,17 +284,5 @@ Pour entrer les valeurs des différentes options.
 ### "isready"
 
 Pour indiquer que le moteur est prêt. 
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## 
